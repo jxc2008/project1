@@ -10,7 +10,11 @@ class Game:
         self.dices = None
         self.coin = None
         self.high_low = None
-        self.players = None
+        self.players = []
+        self.current_bid = 0
+        self.current_ask = 21
+        self.bid_player = None
+        self.ask_player = None
     
     def player_join(self, player):
         self.players.append(player)
@@ -20,10 +24,9 @@ class Game:
         self.players.remove(player)
         self.player_count -= 1
     
-    def start_game(self, players):
+    def start_game(self):
         #start the game
-        self.players = players
-        self.player_count = len(players)
+        self.player_count = len(self.players)
 
         #initialize the game
         self.timer = time.time() #current time, will continuously update to check if elapsed time from this time is 5 minutes
@@ -34,21 +37,19 @@ class Game:
 
         #initialize if the round is high or low
         self.coin = Coin()
-        self.high_low = self.coin.flip()
-
         self.current_round += 1
         self.start_round()
     
     def start_round(self):
         #start the round
         high_low_player = random.choice(self.players)
-        high_low_player.high_low = self.high_low
+        high_low_player.high_low = self.coin.flip()
 
         #roll the dice
         dice_rolls = [dice.roll() for dice in self.dices]
 
         #selects players that receive the dice rolls
-        dice_players = [random.choice(self.players) for i in range(len(self.players))]
+        dice_players = [random.choice(self.players) for i in range(len(dice_rolls))]
 
         #assign the dice rolls to the players
         for i, dice_player in enumerate(dice_players):
@@ -59,12 +60,176 @@ class Game:
             #if the player is not the high_low player or the player that received the dice roll
             if player not in set(dice_players) and player != high_low_player:
                 #randomize between "bid", "long", "short"
-                action = random.choice(["bid", "long", "short"])
+                action = random.choice(["long", "short"])
                 player.contract = Action(action, random.randint(1, 5))
         
         #start the timer
         self.timer = time.time()
+        
+    #tracker function
+    #function will receive action and player name and it will print it
+    #def tracker(self, player_name, player_action_count):
+        #print("Player " + player + "has " + action)
     
+    #simulate players doing stuff function
+    def make_the_market(self):
+        print("Make your post!")
+        input_text = input()  # Example: "daniel bid 10"
+        
+        # Split the input into parts
+        parts = input_text.split()
+        
+        if len(parts) != 3:
+            print("Invalid input format. Please use: <name> <action> <number>")
+            return
+        
+        name, action, number = parts[0], parts[1], parts[2]
+        
+        # Step 1: Check if the name is in the player names array
+        player_names = [player.name for player in self.players]
+        
+        if name not in player_names:
+            print(f"Player '{name}' not found.")
+            return
+        
+        # Step 2: Check if the action is valid ("bid" or "ask")
+        if action not in ["bid", "ask"]:
+            print(f"Invalid action '{action}'. Action must be 'bid' or 'ask'.")
+            return
+        
+        # Step 3: Check if the number is an integer between 1 and 20
+        try:
+            number = int(number)
+            if not (1 <= number <= 20):
+                print("Number must be an integer between 1 and 20.")
+                return
+        except ValueError:
+            print("Invalid number provided. Must be an integer between 1 and 20.")
+            return
+        
+        if action == "bid":
+            if number <= self.current_bid:
+                print(f"Bid must be greater than the market's bid ({self.current_bid}).")
+                return
+            self.current_bid = number
+            self.bid_player = name
+            print(f"Market's bid updated to {self.current_bid} by player {name}.")
+        
+        elif action == "ask":
+            if number >= self.current_ask:
+                print(f"Ask must be less than the market's ask ({self.current_ask}).")
+                return
+            self.current_ask = number
+            self.ask_player = name
+            print(f"Market's ask updated to {self.current_ask} by player {name}.")
+        
+        # If all checks pass
+        print(f"Player: {name}, Action: {action}, Number: {number}")
+        print(f"Player {name} {action}s for ${number}")
+        
+    def take_the_market(self):
+        print("Market Interaction: Use '<name> hit' to sell at the current bid or '<name> lift' to buy at the current ask.")
+        input_text = input("Enter your command: ").strip()
+        
+        # Split the input into parts
+        parts = input_text.split()
+        
+        if len(parts) != 2:
+            print("Invalid format. Please use '<name> hit' or '<name> lift'.")
+            return
+        
+        name, action = parts[0], parts[1].lower()
+        
+        # Validate the player name
+        player_names = [player.name.lower() for player in self.players]
+        if name.lower() not in player_names:
+            print(f"Player '{name}' not found.")
+            return
+        
+        # Validate action
+        if action not in ["hit", "lift"]:
+            print("Invalid action. Please use 'hit' or 'lift'.")
+            return
+        
+        # Fetch the player object who initiated the action
+        player = next((p for p in self.players if p.name.lower() == name.lower()), None)
+        if not player:
+            print("Unexpected error finding the player.")
+            return
+        
+        # Handle 'hit' action (sell at current bid)
+        if action == "hit":
+            if self.current_bid == 0:
+                print("No valid bid available to hit.")
+                return
+            
+            if self.bid_player is not None:
+                print(f"{player.name} sold to {str(self.bid_player)} at the bid price of ${self.current_bid}.")
+                self.current_bid = 0  # Reset the bid after transaction
+                self.bid_player = None  # Clear the bid player
+            else:
+                print("Bidder not found. Transaction failed.")
+        
+        # Handle 'lift' action (buy at current ask)
+        elif action == "lift":
+            if self.current_ask == 0 or self.current_ask == 21:
+                print("No valid ask available to lift.")
+                return
+            
+            if self.ask_player is not None:
+                print(f"{player.name} bought from {str(self.ask_player)} at the ask price of ${self.current_ask}.")
+                self.current_ask = 20  # Reset ask after transaction
+                self.ask_player = None  # Clear the ask player
+            else:
+                print("Asker not found. Transaction failed.")
+
+
+        
+    def prompt_user(self):
+        print("Enter your command: Use 'make' to post a bid/ask, or 'take' to hit the bid/lift the ask.")
+        input_text = input().strip()
+        
+        if not input_text:
+            print("No input provided. Please try again.")
+            return
+        
+        # Extract the first word
+        first_word = input_text.split()[0].lower()
+        
+        if first_word in ["make"]:
+            # Call make_the_market if the first word is 'make'
+            self.make_the_market()
+        elif first_word in ["take"]:
+            # Call take_the_market if the first word is 'take'
+            self.take_the_market()
+        else:
+            print("Invalid input. Please start with 'make' or 'take'.")
+
+        
+
+            
+        
+    #no arguments
+    #print out the text (enter player name, enter player action) example: daniel bid 10
+    #input()
+    #will get name, action, and number from inputted string
+    #it will store that in the player's record and it will call tracker
+    #it will increment action count
+    
+    #basically how we simulate the game in the console is
+    #in the code, we create game object Game()
+    #game.start()
+    #the console will ask for input
+    #you will player actions
+    #after 5 minutes the program will calculate total losses
+    
+    #add player function
+    def add_player(self, name):
+        new_player = Player(name)
+        self.players.append(new_player)
+    #player name as string
+    #make new player object and add it to self.players
+    #print out "player name has joined the game"
 
 class Coin:
     def __init__(self):
@@ -97,8 +262,15 @@ class Player:
         self.high_low = None
         self.price = None
         self.contract = Action(None, None)
+        self.action_count = 0
         self.record = [] #list of action objects
         self.net_worth = 0
+        
+    def get_name(self):
+        return self.name
+    
+    def get_action_count(self):
+        return self.action_count
 
 class Action:
     def __init__(self, type_of_action, number):
@@ -118,4 +290,4 @@ class Action:
     
     def set_price(self, price):
         self.number = price
-
+        
