@@ -30,6 +30,7 @@ Trading Mechanics:
 - Posting Bids/Asks:
     - Bid: Must be higher than the current bid.
     - Ask: Must be lower than the current ask.
+    Trades are simultaneous, so make sure to be fast!
 
 Example Trading Interaction:
 Current Bid-Ask Values:

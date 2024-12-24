@@ -102,7 +102,7 @@ class Player:
 
 class Action:
     def __init__(self, type_of_action, number):
-        #bid, long, short
+        #bid, ask
         self.type_of_action = None
         #price of the action
         self.number = None
