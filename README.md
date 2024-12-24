@@ -5,24 +5,24 @@ Objective: End each round with the highest monetary profit.
 
 How the game works:
 You will all trade an imaginary object with an unknown fair value determined by:
-    - Two rolls of a 20 sided die:
-    - One coin flip (Heads = HI, Tails = LO)
-    
-    Fair Value Determination:
-    - Heads (HI): Fair value is the higher of the two rolls
-    - Tails (LO): Fair value is the lower of the two rolls
-    - 8+ Players: Roll three dice instead of two, and the coin flip determines whether the fair value the highest or lowest of the three dice rolls
+- Two rolls of a 20 sided die:
+- One coin flip (Heads = HI, Tails = LO)
 
-    Player Information:
-    Three players receive one piece of hidden information each:
-    - Value of the first die roll
-    - Value of the second die roll
-    - Coin flip result (HI/LO)
+Fair Value Determination:
+- Heads (HI): Fair value is the higher of the two rolls
+- Tails (LO): Fair value is the lower of the two rolls
+- 8+ Players: Roll three dice instead of two, and the coin flip determines whether the fair value the highest or lowest of the three dice rolls
 
-    The remaining players will receive a trading contract:
-    - Format: [Long/Short, 1-5 trades]
-        - Example: [Long, 4] ---> Player must buy the object at least 4 times.
-    - Failure to fulfill the contract: Automatic net loss of $100!
+Player Information:
+Three players receive one piece of hidden information each:
+- Value of the first die roll
+- Value of the second die roll
+- Coin flip result (HI/LO)
+
+The remaining players will receive a trading contract:
+- Format: [Long/Short, 1-5 trades]
+    - Example: [Long, 4] ---> Player must buy the object at least 4 times.
+- Failure to fulfill the contract: Automatic net loss of $100!
 
 Trading Mechanics:
 - Bid: Highest price a player is willing to buy the object.
