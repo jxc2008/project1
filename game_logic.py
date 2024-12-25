@@ -15,6 +15,10 @@ class Game:
         self.current_ask = 21
         self.bid_player = None
         self.ask_player = None
+        self.hit_player = None
+        self.lift_player = None
+        self.market_active = True
+        self.round_active = False
     
     def player_join(self, player):
         self.players.append(player)
@@ -26,10 +30,21 @@ class Game:
     
     def start_game(self):
         #start the game
+        if not self.market_active:
+            print("The market is currently closed. Cannot start a new round.")
+            return
+        
+        if self.round_active:
+            print("A round is already running. Cannot start a new round until the current one ends.")
+            return
+        
+        self.round_active = True #Mark the round as active
         self.player_count = len(self.players)
 
         #initialize the game
         self.timer = time.time() #current time, will continuously update to check if elapsed time from this time is 5 minutes
+        
+        self.market_active = True #opens market
 
         #more than 8 players will be 3 dice and less than 8 is 2 dice
         #initalize dice to a list of 2 or 3 dice
@@ -39,6 +54,16 @@ class Game:
         self.coin = Coin()
         self.current_round += 1
         self.start_round()
+        while self.market_active:
+            current_time = time.time()
+            
+            # Check if 5 minutes have passed
+            if current_time - self.timer > 300:  # 300 seconds = 5 minutes
+                self.end_round()
+                break  # End the current round and exit the loop
+            
+            # Placeholder for other game logic
+            self.prompt_user()
     
     def start_round(self):
         #start the round
@@ -71,6 +96,19 @@ class Game:
     #def tracker(self, player_name, player_action_count):
         #print("Player " + player + "has " + action)
     
+    def end_round(self):
+        #ends the current round
+        print("Your 5 minutes are up! Ending the current round.")
+        self.current_round += 1
+        self.current_bid = 0
+        self.current_ask = 21
+        self.bid_player = None
+        self.ask_player = None
+        self.hit_player = None
+        self.lift_player = None
+        self.timer = time.time() #resetting the timer
+        self.round_active = False #ending the round
+    
     #simulate players doing stuff function
     def make_the_market(self):
         print("Make your post!")
@@ -85,19 +123,18 @@ class Game:
         
         name, action, number = parts[0], parts[1], parts[2]
         
-        # Step 1: Check if the name is in the player names array
-        player_names = [player.name for player in self.players]
-        
-        if name not in player_names:
+        # Validate player name
+        player = next((p for p in self.players if p.name.lower() == name.lower()), None)
+        if not player:
             print(f"Player '{name}' not found.")
             return
         
-        # Step 2: Check if the action is valid ("bid" or "ask")
+        # Validate action
         if action not in ["bid", "ask"]:
             print(f"Invalid action '{action}'. Action must be 'bid' or 'ask'.")
             return
         
-        # Step 3: Check if the number is an integer between 1 and 20
+        # Validate number
         try:
             number = int(number)
             if not (1 <= number <= 20):
@@ -112,20 +149,17 @@ class Game:
                 print(f"Bid must be greater than the market's bid ({self.current_bid}).")
                 return
             self.current_bid = number
-            self.bid_player = name
-            print(f"Market's bid updated to {self.current_bid} by player {name}.")
+            self.bid_player = player  # Store the actual player object
+            print(f"Market's bid updated to {self.current_bid} by player {player.name}.")
         
         elif action == "ask":
             if number >= self.current_ask:
                 print(f"Ask must be less than the market's ask ({self.current_ask}).")
                 return
             self.current_ask = number
-            self.ask_player = name
-            print(f"Market's ask updated to {self.current_ask} by player {name}.")
-        
-        # If all checks pass
-        print(f"Player: {name}, Action: {action}, Number: {number}")
-        print(f"Player {name} {action}s for ${number}")
+            self.ask_player = player  # Store the actual player object
+            print(f"Market's ask updated to {self.current_ask} by player {player.name}.")
+
         
     def take_the_market(self):
         print("Market Interaction: Use '<name> hit' to sell at the current bid or '<name> lift' to buy at the current ask.")
@@ -141,20 +175,14 @@ class Game:
         name, action = parts[0], parts[1].lower()
         
         # Validate the player name
-        player_names = [player.name.lower() for player in self.players]
-        if name.lower() not in player_names:
+        player = next((p for p in self.players if p.name.lower() == name.lower()), None)
+        if not player:
             print(f"Player '{name}' not found.")
             return
         
         # Validate action
         if action not in ["hit", "lift"]:
             print("Invalid action. Please use 'hit' or 'lift'.")
-            return
-        
-        # Fetch the player object who initiated the action
-        player = next((p for p in self.players if p.name.lower() == name.lower()), None)
-        if not player:
-            print("Unexpected error finding the player.")
             return
         
         # Handle 'hit' action (sell at current bid)
@@ -164,9 +192,13 @@ class Game:
                 return
             
             if self.bid_player is not None:
-                print(f"{player.name} sold to {str(self.bid_player)} at the bid price of ${self.current_bid}.")
+                self.hit_player = player  # Track the player hitting the bid
+                self.hit_player.sell_count += 1 # Increments hit_player's sell_count by 1
+                self.bid_player.buy_count += 1 # Increments bid_player's buy_count by 1
+                print(f"{self.hit_player.name} sold to {self.bid_player.name} at the bid price of ${self.current_bid}.")
                 self.current_bid = 0  # Reset the bid after transaction
                 self.bid_player = None  # Clear the bid player
+                self.hit_player = None  # Clear the hit player
             else:
                 print("Bidder not found. Transaction failed.")
         
@@ -177,15 +209,28 @@ class Game:
                 return
             
             if self.ask_player is not None:
-                print(f"{player.name} bought from {str(self.ask_player)} at the ask price of ${self.current_ask}.")
-                self.current_ask = 20  # Reset ask after transaction
+                self.lift_player = player  # Track the player lifting the ask
+                self.lift_player.buy_count += 1 # Increments lift_player's buy_count by 1
+                self.ask_player.sell_count += 1 # Increments ask_player's sell_count by 1
+                print(f"{self.lift_player.name} bought from {self.ask_player.name} at the ask price of ${self.current_ask}.")
+                self.current_ask = 21  # Reset ask after transaction
                 self.ask_player = None  # Clear the ask player
+                self.lift_player = None  # Clear the lift player
             else:
                 print("Asker not found. Transaction failed.")
 
 
+
         
     def prompt_user(self):
+        if not self.market_active:
+            print("The market is currently closed. Please wait for the next round.")
+            return
+        
+        if not self.round_active:
+            print("No active round. Please start a new round to interact with the market.")
+            return
+    
         print("Enter your command: Use 'make' to post a bid/ask, or 'take' to hit the bid/lift the ask.")
         input_text = input().strip()
         
@@ -204,6 +249,20 @@ class Game:
             self.take_the_market()
         else:
             print("Invalid input. Please start with 'make' or 'take'.")
+            
+    def get_buy_count(self, player_name):
+        """
+        Returns the buy_count of a player given their name.
+        """
+        # Search for the player by name
+        player = next((p for p in self.players if p.name.lower() == player_name.lower()), None)
+        
+        if player:
+            return player.buy_count
+        else:
+            print(f"Player '{player_name}' not found.")
+            return None
+
 
         
 
@@ -262,15 +321,16 @@ class Player:
         self.high_low = None
         self.price = None
         self.contract = Action(None, None)
-        self.action_count = 0
+        self.buy_count = 0
+        self.sell_count = 0
         self.record = [] #list of action objects
         self.net_worth = 0
         
     def get_name(self):
         return self.name
     
-    def get_action_count(self):
-        return self.action_count
+    def get_sell_count(self):
+        return self.sell_count
 
 class Action:
     def __init__(self, type_of_action, number):
