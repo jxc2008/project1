@@ -16,5 +16,3 @@ game.players[1].sell_count = 2  # Bob fulfilled short contract
 
 # End the round
 game.end_round()
-
-test
