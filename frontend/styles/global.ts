@@ -104,52 +104,75 @@ export const aboutStyles = StyleSheet.create({
   });
 
 export const rulesStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#111827', // Equivalent to bg-gray-900
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#E5E7EB', // Equivalent to text-gray-200
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#F9FAFB', // Equivalent to text-gray-100
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 16,
-    color: '#9CA3AF', // Equivalent to text-gray-400
-    textAlign: 'center',
-    marginBottom: 24,
-    maxWidth: 600,
-  },
-  listItem: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginBottom: 4,
-    paddingLeft: 8,
-  },
-  linkButton: {
-    backgroundColor: '#4B5563', // Equivalent to bg-gray-700
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  linkText: {
-    color: '#F9FAFB', // Equivalent to text-gray-100
-    fontSize: 14,
-    textAlign: 'center',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#0f172a', // Tailwind slate-900
+    },
+    contentContainer: {
+        padding: 20,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#f1f5f9', // Tailwind slate-100
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    sectionContainer: {
+        marginBottom: 24,
+        backgroundColor: '#1e293b', // Tailwind slate-800
+        borderRadius: 12,
+        padding: 16,
+    },
+    sectionTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#e2e8f0', // Tailwind slate-200
+        marginBottom: 12,
+    },
+    sectionContent: {
+        marginLeft: 8,
+    },
+    description: {
+        fontSize: 16,
+        color: '#cbd5e1', // Tailwind slate-300
+        marginBottom: 12,
+    },
+    subTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#e2e8f0', // Tailwind slate-200
+        marginTop: 12,
+        marginBottom: 8,
+    },
+    listItemContainer: {
+        flexDirection: 'row',
+        marginBottom: 8,
+    },
+    listItemBullet: {
+        color: '#64748b', // Tailwind slate-500
+        marginRight: 8,
+        fontSize: 16,
+    },
+    listItemText: {
+        flex: 1,
+        fontSize: 16,
+        color: '#cbd5e1', // Tailwind slate-300
+    },
+    linkButton: {
+        backgroundColor: '#3b82f6', // Tailwind blue-500
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        alignSelf: 'center',
+        marginTop: 24,
+    },
+    linkText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
 });
 
 export const crmStyles = StyleSheet.create({
