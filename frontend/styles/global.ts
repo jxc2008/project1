@@ -317,6 +317,11 @@ export const joinModalStyles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  errorText: {
+    color: '#F87171',
+    fontSize: 12,
+    marginTop: 4,
+  },
 });
 
 export const gameListStyles = StyleSheet.create({

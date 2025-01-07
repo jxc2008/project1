@@ -155,14 +155,23 @@ def join_room():
 
         if room.get('isPrivate') and room.get('password') != password:
             return jsonify({"message": "Invalid password"}), 401
-
-        if len(room.get('players', [])) >= room.get('maxPlayers', 10):
-            return jsonify({"message": "Room is full"}), 400
-
-        if username in room.get('players', []):
-            return jsonify({"message": "Username already taken in this room"}), 400
         
         room["game"] = deserialize_game(room.get("game", {}))
+
+        # Check if room is full
+        if len(room["game"].players) >= room.get('maxPlayers', 10):
+            print('room_full')
+            return jsonify({"message": "Room is full"}), 400
+
+        # Check if username is already taken in this room
+        name_taken = False
+        for player in room["game"].players:
+            if username == player.get_name():
+                name_taken = True
+                break
+        if name_taken:
+            return jsonify({"message": "Username taken"}), 400
+    
         #initiate new player
         new_player = Player(username)
         new_player.status = "active"

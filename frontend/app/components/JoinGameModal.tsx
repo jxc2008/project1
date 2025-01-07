@@ -14,12 +14,30 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
   const [roomId, setRoomId] = useState('');
   const [handle, setHandle] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [roomNotFound, setRoomNotFound] = useState('');
+  const [handleNotSet, setHandleNotSet] = useState('');
+  const [roomIsFull, setRoomIsFull] = useState('');
+  const [handleTaken, setHandleTaken] = useState('');
 
   const router = useRouter();
 
   const handleSubmit = async () => {
-    if (!code || !handle) {
-      Alert.alert('Error', 'Game code and username are required');
+    if (!code) {
+      setRoomNotFound('Room not found');
+      setHandleNotSet('');
+      setPasswordError('');
+      setRoomIsFull('');
+      setHandleTaken('');
+      return;
+    }
+
+    if (!handle) {
+      setHandleNotSet('Username is required');
+      setRoomNotFound('');
+      setPasswordError('');
+      setRoomIsFull('');
+      setHandleTaken('');
       return;
     }
 
@@ -42,8 +60,34 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
       });
 
     } catch (error) {
-      console.error('Failed to join room:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to join room');
+      const errorMessage = error.response?.data?.message || 'Failed to join room';
+      if (errorMessage === 'Invalid password') {
+        setPasswordError('Incorrect password. Please try again.');
+        setRoomNotFound('');
+        setHandleNotSet('');
+        setRoomIsFull('');
+        setHandleTaken('');
+      } else if (errorMessage === 'Room not found') {
+        setRoomNotFound('Room not found');
+        setPasswordError('');
+        setHandleNotSet('');
+        setRoomIsFull('');
+        setHandleTaken('');
+      } else if (errorMessage === 'Room is full') {
+        setRoomIsFull('Room is full');
+        setRoomNotFound('');
+        setHandleNotSet('');
+        setPasswordError('');
+        setHandleTaken('');
+      } else if (errorMessage === 'Username taken') {
+        setHandleTaken('Username already taken in this room');
+        setRoomIsFull('');
+        setRoomNotFound('');
+        setHandleNotSet('');
+        setPasswordError('');
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
     }
   };
 
@@ -55,7 +99,9 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
           <Text style={joinModalStyles.title}>Join Game</Text>
 
           {/* Game Code Input */}
-          <View style={joinModalStyles.inputContainer}>
+
+          {(
+            <View style={joinModalStyles.inputContainer}>
             <Text style={joinModalStyles.label}>Game Code</Text>
             <TextInput
               style={joinModalStyles.input}
@@ -64,35 +110,55 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
               placeholder="Enter game code"
               placeholderTextColor="#9CA3AF"
             />
-          </View>
+            {roomNotFound && (
+                <Text style={joinModalStyles.errorText}>{roomNotFound}</Text>
+            )}
+            </View>
+          )}
 
           {/* User Handle Input */}
-          <View style={joinModalStyles.inputContainer}>
+          {(
+            <View style={joinModalStyles.inputContainer}>
             <Text style={joinModalStyles.label}>User Handle</Text>
-            <TextInput
-              style={joinModalStyles.input}
-              value={handle}
-              onChangeText={setHandle}
-              placeholder="Enter your handle"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
+              <TextInput
+                style={joinModalStyles.input}
+                value={handle}
+                onChangeText={setHandle}
+                placeholder="Enter your handle"
+                placeholderTextColor="#9CA3AF"
+              />
+              {handleNotSet && (
+                <Text style={joinModalStyles.errorText}>{handleNotSet}</Text>
+              )}
+              {handleTaken && (
+                <Text style={joinModalStyles.errorText}>{handleTaken}</Text>
+              )}
+            </View>
+          )}
+          
 
-          {/* Password Input */}
-          <View style={joinModalStyles.inputContainer}>
+          {(
+            <View style={joinModalStyles.inputContainer}>
             <Text style={joinModalStyles.label}>Password (if private)</Text>
-            <TextInput
-              style={joinModalStyles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-            />
-          </View>
+              <TextInput
+                style={joinModalStyles.input}
+                placeholder="Enter password"
+                placeholderTextColor="#9CA3AF"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              {passwordError && (
+                <Text style={joinModalStyles.errorText}>{passwordError}</Text>
+              )}
+            </View>
+          )}
 
           {/* Buttons */}
           <View style={joinModalStyles.buttonContainer}>
+            {roomIsFull && (
+                <Text style={joinModalStyles.errorText}>{roomIsFull}</Text>
+            )}
             <TouchableOpacity onPress={onClose} style={joinModalStyles.cancelButton}>
               <Text style={joinModalStyles.buttonText}>Cancel</Text>
             </TouchableOpacity>

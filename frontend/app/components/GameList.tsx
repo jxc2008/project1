@@ -15,6 +15,9 @@ export default function GameList() {
   const [roomCodes, setRoomCodes] = useState({});
   const [isPrivate, setIsPrivate] = useState(false); // Track if the selected room is private
   const [passwordError, setPasswordError] = useState(''); // Track password error message
+  const [handleNotSet, setHandleNotSet] = useState('');
+  const [roomIsFull, setRoomIsFull] = useState('');
+  const [handleTaken, setHandleTaken] = useState('');
   
   const router = useRouter();
 
@@ -37,12 +40,7 @@ export default function GameList() {
 
 
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to join room';
-      if (errorMessage === 'Invalid password') {
-        setPasswordError('Incorrect password. Please try again.');
-      } else {
-        Alert.alert('Error', errorMessage);
-      }
+      Alert.alert('Error', error);
     } finally {
       setIsLoading(false);
     }
@@ -51,20 +49,26 @@ export default function GameList() {
   const openJoinModal = (room) => {
     setSelectedRoom(room);
     setIsJoinModalVisible(true);
-    setPasswordError(''); // Reset error state
+    setPasswordError('');
+    setHandleNotSet('');
+    setRoomIsFull('');
+    setHandleTaken('');
     setIsPrivate(room.isPrivate);
   };
 
   const joinRoom = async () => {
     if (!username) {
-      Alert.alert('Error', 'Username is required');
+      setHandleNotSet('Username is required');
+      setPasswordError('');
+      setRoomIsFull('');
+      setHandleTaken('');
       return;
     }
 
     const roomCode = roomCodes[selectedRoom._id];
 
     try {
-      const response = await axios.post('http://localhost:5000/join-room', {
+      await axios.post('http://localhost:5000/join-room', {
         roomCode,
         username,
         password: selectedRoom.isPrivate ? password : null,
@@ -89,6 +93,19 @@ export default function GameList() {
       const errorMessage = error.response?.data?.message || 'Failed to join room';
       if (errorMessage === 'Invalid password') {
         setPasswordError('Incorrect password. Please try again.');
+        setHandleNotSet('');
+        setRoomIsFull('');
+        setHandleTaken('');
+      } else if (errorMessage === 'Room is full') {
+        setRoomIsFull('Room is full');
+        setHandleNotSet('');
+        setPasswordError('');
+        setHandleTaken('');
+      } else if (errorMessage === 'Username taken') {
+        setHandleTaken('Username already taken in this room');
+        setHandleNotSet('');
+        setPasswordError('');
+        setRoomIsFull('');
       } else {
         Alert.alert('Error', errorMessage);
       }
@@ -133,13 +150,23 @@ export default function GameList() {
             <Text style={gameListStyles.modalTitle}>Join Room</Text>
 
             {/* Username Field */}
-            <TextInput
-              style={gameListStyles.input}
-              placeholder="Enter your username"
-              placeholderTextColor="#9CA3AF"
-              value={username}
-              onChangeText={setUsername}
-            />
+            {(
+              <>
+                <TextInput
+                  style={gameListStyles.input}
+                  placeholder="Enter your username"
+                  placeholderTextColor="#9CA3AF"
+                  value={username}
+                  onChangeText={setUsername}
+                />
+                {handleNotSet && (
+                  <Text style={gameListStyles.errorText}>{handleNotSet}</Text>
+                )}
+                {handleTaken && (
+                  <Text style={gameListStyles.errorText}>{handleTaken}</Text>
+                )}
+              </>
+            )}
 
             {/* Password Field (only if private room) */}
             {isPrivate && (
@@ -161,6 +188,9 @@ export default function GameList() {
 
             {/* Buttons */}
             <View style={gameListStyles.buttonContainer}>
+              {roomIsFull && (
+                  <Text style={gameListStyles.errorText}>{roomIsFull}</Text>
+              )}
               <TouchableOpacity
                 onPress={() => setIsJoinModalVisible(false)}
                 style={gameListStyles.cancelButton}
