@@ -1,5 +1,6 @@
 import random
 import time
+import datetime
 
 
 class Game:
@@ -19,6 +20,7 @@ class Game:
         self.lift_player = None
         self.market_active = True
         self.round_active = False
+        self.fair_value = 0
     
     def player_join(self, player):
         self.players.append(player)
@@ -54,48 +56,73 @@ class Game:
         self.coin = Coin()
         self.current_round += 1
         self.start_round()
-        # while self.market_active:
-            # current_time = time.time()
+        while self.market_active:
+            current_time = time.time()
             
-            # Check if 5 minutes have passed
-            # if current_time - self.timer > 300:  # 300 seconds = 5 minutes
-                # self.end_round()
-                # break  # End the current round and exit the loop
+            #Check if 5 minutes have passed
+            if current_time - self.timer > 300:  # 300 seconds = 5 minutes
+                self.end_round()
+                break  # End the current round and exit the loop
             
             # Placeholder for other game logic
-            # self.prompt_user()
+            self.prompt_user()
     
     def start_round(self):
         """
         Starts a new round, assigns contracts and high/low player.
         """
-        print("Starting a new round!")
+        print("\nStarting a new round!")
         
         high_low_player = random.choice(self.players)
         high_low_player.high_low = self.coin.flip()
         print(f"{high_low_player.name} is the High/Low player with {high_low_player.high_low}.")
         
+        # Create eligible players list excluding the high_low_player
+        eligible_players = [player for player in self.players if player != high_low_player]
+        
+        # Debug
+        if len(eligible_players) < len(self.dices):
+            print("Not enough eligible players to assign each die uniquely.")
+            print(f"Eligible Players: {len(eligible_players)}, Dice: {len(self.dices)}")
+            return
+        
         # Roll the dice
         dice_rolls = [dice.roll() for dice in self.dices]
-        dice_players = [random.choice(self.players) for i in range(len(dice_rolls))]
+        dice_players = random.sample(eligible_players, len(dice_rolls))
         
         # Assign the dice rolls to the players
         for i, dice_player in enumerate(dice_players):
-            dice_player.price = dice_rolls[i]
-            print(f"{dice_player.name} received a dice roll of {dice_rolls[i]}")
+            dice_player.record.append(["dice_roll", dice_rolls[i]])
+            print(f"{dice_player.name} received a dice roll of ${dice_rolls[i]}")
         
-        # Assign the contract to the players
+        # Determine the fair_value based on High/Low outcome
+        if high_low_player.high_low == "high":
+            # High: Set fair_value to the highest dice roll
+            highest_roll = max(dice_rolls)
+            self.fair_value = highest_roll
+            print(f"Fair Value is set to the highest dice roll: ${self.fair_value}.")
+        else:
+            # Low: Set fair_value to the lowest dice roll
+            lowest_roll = min(dice_rolls)
+            self.fair_value = lowest_roll
+            print(f"Fair Value is set to the lowest dice roll: ${self.fair_value}.")
+            
+        # Assign contracts to players not involved in dice rolls and not the high_low_player
         for player in self.players:
-            if player not in set(dice_players) and player != high_low_player:
+            if player not in dice_players and player != high_low_player:
                 action = random.choice(["long", "short"])
                 contract_number = random.randint(1, 5)
-                player.contract = Action(action, contract_number)
-                print(f"{player.name} assigned {action.upper()} contract with number {contract_number}.")
+                player.contract = Action(action, contract_number)  # Using Action object
+                print(f"{player.name} assigned {player.contract.type_of_action.upper()} contract with number {player.contract.number}.")
         
         # Debug: Verify contracts
         print("\nContract Assignment Debug:")
         for player in self.players:
-            print(f"{player.name}: Contract - {player.contract.type_of_action}, Number - {player.contract.number}")
+            if player.contract:
+                print(f"{player.name}: Contract - {player.contract.type_of_action.upper()}, Number - {player.contract.number}")
+            else:
+                print(f"{player.name}: No contract assigned.")
+
 
         
     #tracker function
@@ -105,35 +132,67 @@ class Game:
     
     def end_round(self):
         """
-        Ends the current round, compares contracts, applies penalties, and resets necessary variables.
+        Ends the current round, compares contracts, applies penalties, calculates P/L, and resets necessary variables.
         """
-        print("Your 5 minutes are up! Ending the current round.")
-        print(f"Total players: {len(self.players)}")
-        
+        print("\nYour 5 minutes are up! Ending the current round.")
+        print(f"Fair Value for this round: ${self.fair_value}")
+
         for player in self.players:
-            print(f"Checking player: {player.name}")
+            total_pl = 0
+            print(f"\nProcessing player: {player.name}")
+
+            # Handle Contract Fulfillment
             if player.contract and player.contract.type_of_action in ["long", "short"]:
+                action_type = player.contract.type_of_action
                 required_trades = player.contract.number
-                print(f"{player.name} has a {player.contract.type_of_action.upper()} contract requiring {required_trades} trades.")
-                
-                if player.contract.type_of_action == "long":
+                print(f"{player.name} has a {action_type.upper()} contract requiring {required_trades} trades.")
+
+                if action_type == "long":
                     if player.buy_count >= required_trades:
                         print(f"{player.name} fulfilled their LONG contract requirement! ✅")
                     else:
-                        print(f"{player.name} did NOT fulfill their LONG contract requirement. ❌ Net worth decreased by $100.")
-                        player.net_worth -= 100
-                
-                elif player.contract.type_of_action == "short":
+                        print(f"{player.name} did NOT fulfill their LONG contract requirement. ❌ Cumulative P/L decreased by $100.")
+                        player.cumulative_pnl -= 100
+
+                elif action_type == "short":
                     if player.sell_count >= required_trades:
                         print(f"{player.name} fulfilled their SHORT contract requirement! ✅")
                     else:
-                        print(f"{player.name} did NOT fulfill their SHORT contract requirement. ❌ Net worth decreased by $100.")
-                        player.net_worth -= 100
-            
-            else:
-                print(f"{player.name} does not have a valid contract assigned. Skipping.")
-        
-        # Reset market variables
+                        print(f"{player.name} did NOT fulfill their SHORT contract requirement. ❌ Cumulative P/L decreased by $100.")
+                        player.cumulative_pnl -= 100
+
+            # Calculate Profit/Loss based on Actions
+            for action_entry in player.record:
+                # Each action_entry is expected to be a list: [action, price]
+                if not isinstance(action_entry, list) or len(action_entry) != 2:
+                    print(f"Invalid action entry for player {player.name}: {action_entry}")
+                    continue
+
+                action, price = action_entry
+                action = action.lower()
+
+                if action == "long":
+                    pl = self.fair_value - price
+                    print(f"Player {player.name} LONG at ${price}: P/L = ${self.fair_value} - ${price} = ${pl}")
+                elif action == "short":
+                    pl = price - self.fair_value
+                    print(f"Player {player.name} SHORT at ${price}: P/L = ${price} - ${self.fair_value} = ${pl}")
+                else:
+                    continue
+
+                total_pl += pl
+
+            # Update Player's cumulative_pnl
+            player.cumulative_pnl += total_pl
+            print(f"Player {player.name} total P/L for this round: ${total_pl}")
+            print(f"Player {player.name} new cumulative P/L: ${player.cumulative_pnl}")
+
+            # Reset Player's Records for Next Round
+            player.record = []
+            player.buy_count = 0
+            player.sell_count = 0
+
+        # Reset Market Variables for Next Round
         self.current_round += 1
         self.current_bid = 0
         self.current_ask = 21
@@ -144,7 +203,77 @@ class Game:
         self.timer = time.time()  # Reset the timer for the next round
         self.round_active = False  # Stop the current round
 
+        print("\n--- Round Ended Successfully ---\n")
+        print("Would you like to play another round? (yes to continue)")
+        inp = input()
+        if inp == "yes":
+            self.start_game()
+        else:
+            print("\n--- Game Over ---")
+            print("\nFinal Cumulative P/L for All Players:")
+            for player in self.players:
+                print(f"{player.name}: ${player.cumulative_pnl}")
 
+            winner = max(self.players, key=lambda p: p.cumulative_pnl)
+            print(f"\n🏆 The winner is {winner.name} with a cumulative P/L of ${winner.cumulative_pnl}!")
+            return
+
+
+
+    def make_the_market(self):
+        print("Make your post!")
+        input_text = input()  # Example: "daniel bid 10"
+        
+        # Split the input into parts
+        parts = input_text.strip().split()
+        
+        if len(parts) != 3:
+            print("Invalid input format. Please use: <name> <action> <number>")
+            return
+        
+        name, action, number = parts[0], parts[1], parts[2]
+        
+        # Step 1: Check if the player is in the player names array
+        player = next((player for player in self.players if player.name.lower() == name.lower()), None)
+        
+        if player is None:
+            print(f"Player '{name}' is not found.")
+            
+        # Step 2: Check if the action is valid ("bid" or "ask")
+        if action not in ["bid", "ask"]:
+            print(f"Invalid action '{action}'. Action must be 'bid' or 'ask'.")
+            return
+        
+        # Step 3: Check if the number is an integer between 1 and 20
+        try:
+            number = int(number)
+            if not (1 <= number <= 20):
+                print("Number must be an integer between 1 and 20.")
+                return
+        except ValueError:
+            print("Invalid number provided. Must be an integer between 1 and 20.")
+            return
+        
+        if action == "bid":
+            if number <= self.current_bid:
+                print(f"Bid must be greater than the market's bid ({self.current_bid}).")
+                return
+            self.current_bid = number
+            self.bid_player = player
+            print(f"Market's bid updated to {self.current_bid} by player {name}.")
+            player.record.append(["bid", number])
+        elif action == "ask":
+            if number >= self.current_ask:
+                print(f"Ask must be less than the market's ask ({self.current_ask}).")
+                return
+            self.current_ask = number
+            self.ask_player = player
+            print(f"Market's ask updated to {self.current_ask} by player {name}.")
+            player.record.append(["ask", number])
+        
+        # If all checks pass
+        print(f"Player: {player.name}, Action: {action}, Number: {number}")
+        print(f"Player {player.name} {action}s for ${number}")
         
     def take_the_market(self):
         print("Market Interaction: Use '<name> hit' to sell at the current bid or '<name> lift' to buy at the current ask.")
@@ -180,6 +309,8 @@ class Game:
                 self.hit_player = player  # Track the player hitting the bid
                 self.hit_player.sell_count += 1 # Increments hit_player's sell_count by 1
                 self.bid_player.buy_count += 1 # Increments bid_player's buy_count by 1
+                self.hit_player.record.append(["short", self.current_bid])
+                self.bid_player.record.append(["long", self.current_bid])
                 print(f"{self.hit_player.name} sold to {self.bid_player.name} at the bid price of ${self.current_bid}.")
                 self.current_bid = 0  # Reset the bid after transaction
                 self.bid_player = None  # Clear the bid player
@@ -197,6 +328,8 @@ class Game:
                 self.lift_player = player  # Track the player lifting the ask
                 self.lift_player.buy_count += 1 # Increments lift_player's buy_count by 1
                 self.ask_player.sell_count += 1 # Increments ask_player's sell_count by 1
+                self.lift_player.record.append(["long", self.current_ask])
+                self.ask_player.record.append(["short", self.current_ask])
                 print(f"{self.lift_player.name} bought from {self.ask_player.name} at the ask price of ${self.current_ask}.")
                 self.current_ask = 21  # Reset ask after transaction
                 self.ask_player = None  # Clear the ask player
@@ -247,33 +380,17 @@ class Game:
         else:
             print(f"Player '{player_name}' not found.")
             return None
-
-
-        
-
-            
-        
-    #no arguments
-    #print out the text (enter player name, enter player action) example: daniel bid 10
-    #input()
-    #will get name, action, and number from inputted string
-    #it will store that in the player's record and it will call tracker
-    #it will increment action count
-    
-    #basically how we simulate the game in the console is
-    #in the code, we create game object Game()
-    #game.start()
-    #the console will ask for input
-    #you will player actions
-    #after 5 minutes the program will calculate total losses
     
     #add player function
     def add_player(self, name):
         new_player = Player(name)
         self.players.append(new_player)
-    #player name as string
-    #make new player object and add it to self.players
-    #print out "player name has joined the game"
+        self.player_count += 1
+        print(f"Player {name} has joined the game.")
+    
+    #so mongoDB can add a new player
+    def to_dict(self):
+        return { "players": [player.to_dict() for player in self.players] }
 
 class Coin:
     def __init__(self):
@@ -301,25 +418,40 @@ class Dice:
 
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name, status="active", last_active=None):
         self.name = name
         self.high_low = None
         self.price = None
-        self.contract = Action(None, None)
+        self.contract = None
         self.buy_count = 0
         self.sell_count = 0
         self.record = [] #list of action objects
-        self.net_worth = 0
+        self.cumulative_pnl = 0
+        self.status = None
+        self.last_active = last_active or datetime.datetime.now()
         
     def get_name(self):
         return self.name
     
+    def get_status(self):
+        return self.status
+    
+    def get_last_active(self):
+        return self.last_active.isoformat() if self.last_active else None
+    
     def get_sell_count(self):
         return self.sell_count
+    
+    def to_dict(self):
+        return {
+            "username": self.name,
+            "status": self.status,
+            "last_active": self.last_active.isoformat() if self.last_active else None
+        }
 
 class Action:
     def __init__(self, type_of_action, number):
-        #bid, ask
+        #long, short
         self.type_of_action = type_of_action #long, short
         #price of the action
         self.number = number

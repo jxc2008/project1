@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Switch, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, TextInput, Switch, TouchableOpacity, Modal, Alert } from 'react-native';
 import { crmStyles } from '../../styles/global';
+import axios from "axios";
+
+import { useRouter } from 'expo-router';
 
 interface CreateRoomModalProps {
   onClose: () => void;
@@ -9,12 +12,40 @@ interface CreateRoomModalProps {
 export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = () => {
-    // Implement create room logic here
-    console.log(`Creating room: ${roomName}, Private: ${isPrivate}, Password: ${password}`);
-    onClose();
+  const router = useRouter();
+
+  const handleSubmit = async () => {
+    if (!roomName) {
+      Alert.alert('Error', 'Room name is required');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:5000/create-room', {
+        room_name: roomName,
+        password: isPrivate ? password : null,
+        isPrivate,
+        username: username,
+      });
+
+      Alert.alert('Success', 'Room created successfully');
+      onClose();
+      router.push({
+        pathname: '/game',
+        params: {
+          roomName,
+          roomId: response.data.roomId,
+          username: username,
+        }
+      });
+    } catch (error) {
+      console.error('Failed to create room:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to create room');
+    }
+
   };
 
   return (
@@ -31,6 +62,18 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
               value={roomName}
               onChangeText={setRoomName}
               placeholder="Enter room name"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
+
+          {/* Username */}
+          <View style={crmStyles.inputContainer}>
+            <Text style={crmStyles.label}>Username</Text>
+            <TextInput
+              style={crmStyles.input}
+              value={username}
+              onChangeText={setUsername}
+              placeholder="Enter your username"
               placeholderTextColor="#9CA3AF"
             />
           </View>

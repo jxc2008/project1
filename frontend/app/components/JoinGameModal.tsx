@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, Alert } from 'react-native';
 import { joinModalStyles } from '../../styles/global';
+import axios from 'axios';
+
+import { useRouter } from 'expo-router';
 
 interface JoinGameModalProps {
   onClose: () => void;
@@ -8,11 +11,40 @@ interface JoinGameModalProps {
 
 export default function JoinGameModal({ onClose }: JoinGameModalProps) {
   const [code, setCode] = useState('');
+  const [roomId, setRoomId] = useState('');
   const [handle, setHandle] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleSubmit = () => {
-    console.log(`Joining game with code ${code} and handle ${handle}`);
-    onClose();
+  const router = useRouter();
+
+  const handleSubmit = async () => {
+    if (!code || !handle) {
+      Alert.alert('Error', 'Game code and username are required');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:5000/join-room', {
+        roomCode: code,
+        username: handle,
+        password: password || null,
+      });
+
+      Alert.alert('Success', 'Successfully joined the room!');
+      onClose();
+
+      router.push({
+        pathname: '/game',
+        params: {
+          roomId: response.data.roomId,
+          username: handle,
+        }
+      });
+
+    } catch (error) {
+      console.error('Failed to join room:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to join room');
+    }
   };
 
   return (
@@ -43,6 +75,19 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
               onChangeText={setHandle}
               placeholder="Enter your handle"
               placeholderTextColor="#9CA3AF"
+            />
+          </View>
+
+          {/* Password Input */}
+          <View style={joinModalStyles.inputContainer}>
+            <Text style={joinModalStyles.label}>Password (if private)</Text>
+            <TextInput
+              style={joinModalStyles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter password"
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry
             />
           </View>
 

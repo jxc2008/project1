@@ -184,6 +184,7 @@ export const crmStyles = StyleSheet.create({
   },
   modalContainer: {
     width: '90%',
+    maxWidth: 400,
     backgroundColor: '#1F2937', // Tailwind gray-800
     padding: 20,
     borderRadius: 8,
@@ -258,6 +259,7 @@ export const joinModalStyles = StyleSheet.create({
   },
   modalContainer: {
     width: '90%',
+    maxWidth: 400,
     backgroundColor: '#1F2937', // Tailwind gray-800
     padding: 20,
     borderRadius: 8,
@@ -374,5 +376,97 @@ export const gameListStyles = StyleSheet.create({
     color: '#F9FAFB', // Tailwind gray-100
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  noGamesContainer: {
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  noGamesText: {
+    fontSize: 16,
+    marginBottom: 12,
+    color: '#555',
+    textAlign: 'center',
+  },
+  loadingText: {
+    textAlign: 'center',
+    fontSize: 16,
+    marginTop: 20,
+    color: '#666',
+  },
+  gameCode : {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  overlay : {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer : {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#1F2937',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle : {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#E5E7EB',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  gameListStyles : {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  input : {
+    backgroundColor: '#374151', // Tailwind gray-700
+    color: '#E5E7EB', // Tailwind gray-200
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#4B5563', // Tailwind gray-600
+    marginBottom: 10
+  },
+  buttonContainer : {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 16,
+    gap: 8,
+  },
+  cancelButton : {
+    backgroundColor: '#4B5563',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+  },
+  submitButton : {
+    backgroundColor: '#374151',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+  },
+  buttonText : {
+    color: '#F9FAFB', // Tailwind gray-100
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#F87171',
+    fontSize: 12,
+    marginTop: 4,
   },
 });
