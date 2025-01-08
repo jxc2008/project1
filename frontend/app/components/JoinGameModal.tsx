@@ -52,7 +52,7 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
       onClose();
 
       router.push({
-        pathname: '/game',
+        pathname: '/waiting',
         params: {
           roomId: response.data.roomId,
           username: handle,
@@ -119,12 +119,12 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
           {/* User Handle Input */}
           {(
             <View style={joinModalStyles.inputContainer}>
-            <Text style={joinModalStyles.label}>User Handle</Text>
+            <Text style={joinModalStyles.label}>Username</Text>
               <TextInput
                 style={joinModalStyles.input}
                 value={handle}
                 onChangeText={setHandle}
-                placeholder="Enter your handle"
+                placeholder="Enter your username"
                 placeholderTextColor="#9CA3AF"
               />
               {handleNotSet && (

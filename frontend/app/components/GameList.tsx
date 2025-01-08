@@ -81,7 +81,7 @@ export default function GameList() {
       fetchRooms();
 
       router.push({
-        pathname: '/game',
+        pathname: '/waiting',
         params: {
           roomId: selectedRoom._id,
           username: username,

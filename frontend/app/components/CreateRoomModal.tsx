@@ -34,7 +34,7 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
       Alert.alert('Success', 'Room created successfully');
       onClose();
       router.push({
-        pathname: '/game',
+        pathname: '/waiting',
         params: {
           roomName,
           roomId: response.data.roomId,
