@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
 
+import { useLocalSearchParams } from 'expo-router';
+
 interface Player {
   username: string;
 }
@@ -11,7 +13,24 @@ interface WaitingRoomProps {
 }
 
 export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: WaitingRoomProps) {
+  const { roomName, roomId, username } = useLocalSearchParams();
   const [dots, setDots] = useState('.');
+
+  useEffect(() => {
+      const disconnect = () => {
+        navigator.sendBeacon(
+          'http://localhost:5000/disconnect',
+          JSON.stringify({ roomId, username })
+        );
+      };
+    
+      window.addEventListener('beforeunload', disconnect);
+      
+      return () => {
+        disconnect();
+        window.removeEventListener('beforeunload', disconnect);
+      };
+    }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
