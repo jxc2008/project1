@@ -188,7 +188,7 @@ def join_room():
         return jsonify({
             "message": "Room created successfully",
             "roomId": str(room["_id"]),
-            "num_players": num_players
+            "num_players": num_players + 1,
         }), 201
 
     except Exception as e:
