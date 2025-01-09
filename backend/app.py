@@ -33,19 +33,41 @@ def serialize_game(game):
             {
                 "username": player.get_name(),
                 "status": player.get_status(),
-                "last_active": player.get_last_active()
+                "last_active": player.get_last_active(),
+                "high_low": player.high_low,
+                "contract": {
+                    "type_of_action": player.contract.type_of_action if player.contract else None,
+                    "number": player.contract.number if player.contract else None,
+                },
+                "buy_count": player.buy_count,
+                "sell_count": player.sell_count,
+                "record": player.record,
+                "cumulative_pnl": player.cumulative_pnl,
             }
             for player in game.players
         ],
         "host": game.get_host(),
         "player_count": game.player_count,
-        "current_round": game.current_round
+        "current_round": game.current_round,
+        "timer": game.timer,
+        "dices": [dice.get_value() for dice in game.dices] if game.dices else None,
+        "coin": game.coin.get_value() if game.coin else None,
+        "current_bid": game.current_bid,
+        "current_ask": game.current_ask,
+        "bid_player": game.bid_player.get_name() if game.bid_player else None,
+        "ask_player": game.ask_player.get_name() if game.ask_player else None,
+        "hit_player": game.hit_player.get_name() if game.hit_player else None,
+        "lift_player": game.lift_player.get_name() if game.lift_player else None,
+        "market_active": game.market_active,
+        "round_active": game.round_active,
+        "fair_value": game.fair_value,
     }
 
 
 def deserialize_game(game_data):
     game = Game()
 
+    # Restore players
     for player_data in game_data.get("players", []):
         player = Player(
             name=player_data.get("username", "Unknown"),
@@ -54,14 +76,69 @@ def deserialize_game(game_data):
                 datetime.fromisoformat(player_data["last_active"])
                 if player_data.get("last_active")
                 else None
-            )
+            ),
         )
+        player.high_low = player_data.get("high_low")
+        player.buy_count = player_data.get("buy_count", 0)
+        player.sell_count = player_data.get("sell_count", 0)
+        player.record = player_data.get("record", [])
+        player.cumulative_pnl = player_data.get("cumulative_pnl", 0)
+
+        # Restore contract
+        contract_data = player_data.get("contract")
+        if contract_data and contract_data["type_of_action"]:
+            player.contract = Action(
+                type_of_action=contract_data["type_of_action"],
+                number=contract_data["number"],
+            )
 
         game.player_join(player)
 
-    game.set_host( game_data.get("host", None) )
+    # Restore game state
+    game.set_host(game_data.get("host", None))
     game.player_count = game_data.get("player_count", 0)
     game.current_round = game_data.get("current_round", 0)
+    game.timer = game_data.get("timer", 0)
+    game.dices = (
+        [Dice() for _ in range(len(game_data["dices"]))] if game_data.get("dices") else None
+    )
+    if game.dices and game_data.get("dices"):
+        for dice, value in zip(game.dices, game_data["dices"]):
+            dice.value = value
+
+    game.coin = Coin()
+    if game_data.get("coin"):
+        game.coin.value = game_data["coin"]
+
+    game.current_bid = game_data.get("current_bid", 0)
+    game.current_ask = game_data.get("current_ask", 21)
+    game.market_active = game_data.get("market_active", True)
+    game.round_active = game_data.get("round_active", False)
+    game.fair_value = game_data.get("fair_value", 0)
+
+    # Restore player references
+    bid_player_name = game_data.get("bid_player")
+    ask_player_name = game_data.get("ask_player")
+    hit_player_name = game_data.get("hit_player")
+    lift_player_name = game_data.get("lift_player")
+
+    if bid_player_name:
+        game.bid_player = next(
+            (player for player in game.players if player.name == bid_player_name), None
+        )
+    if ask_player_name:
+        game.ask_player = next(
+            (player for player in game.players if player.name == ask_player_name), None
+        )
+    if hit_player_name:
+        game.hit_player = next(
+            (player for player in game.players if player.name == hit_player_name), None
+        )
+    if lift_player_name:
+        game.lift_player = next(
+            (player for player in game.players if player.name == lift_player_name), None
+        )
+
     return game
 
 @app.route('/create-room', methods=['POST'])
@@ -286,11 +363,17 @@ def handle_join_room(data):
         socketio.server.enter_room(sid=request.sid, room=room_id)
         print(f"Client {username} joined room: {room_id}")
         emit('joined_room', {"roomId": room_id, "username": username}, room=room_id)
-        
+
+
+
 @socketio.on('start_game')
 def handle_start_game(data):
     room_id = data.get('roomId')
     print(f"Starting game for room: {room_id}")
+
+    game = deserialize_game(rooms_collection.find_one({"_id": ObjectId(room_id)}).get("game", {}))
+    game.start_game()
+
     # Emit the start_game event to all clients in the room
     socketio.emit('start_game', {"roomId": room_id}, room=room_id)
 
