@@ -63,16 +63,16 @@ class Game:
         self.coin = Coin()
         self.current_round += 1
         self.start_round()
-        while self.market_active:
-            current_time = time.time()
+        # while self.market_active:
+        #     current_time = time.time()
             
             #Check if 5 minutes have passed
-            if current_time - self.timer > 300:  # 300 seconds = 5 minutes
-                self.end_round()
-                break  # End the current round and exit the loop
+        #     if current_time - self.timer > 300:  # 300 seconds = 5 minutes
+        #         self.end_round()
+        #         break  # End the current round and exit the loop
             
             # Placeholder for other game logic
-            self.prompt_user()
+            # self.prompt_user()
     
     def start_round(self):
         """
