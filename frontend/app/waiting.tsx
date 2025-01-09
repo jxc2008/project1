@@ -13,7 +13,7 @@ interface WaitingRoomProps {
 }
 
 export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: WaitingRoomProps) {
-  const { roomName, roomId, username } = useLocalSearchParams();
+  const { roomName, roomId, username, num_players } = useLocalSearchParams();
   const [dots, setDots] = useState('.');
 
   useEffect(() => {

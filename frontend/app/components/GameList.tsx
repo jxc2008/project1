@@ -68,7 +68,7 @@ export default function GameList() {
     const roomCode = roomCodes[selectedRoom._id];
 
     try {
-      await axios.post('http://localhost:5000/join-room', {
+      const response = await axios.post('http://localhost:5000/join-room', {
         roomCode,
         username,
         password: selectedRoom.isPrivate ? password : null,
@@ -85,6 +85,7 @@ export default function GameList() {
         params: {
           roomId: selectedRoom._id,
           username: username,
+          num_players: response.data.num_players,
         }
       });
 
