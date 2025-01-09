@@ -77,7 +77,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     return () => clearInterval(interval);
   }, []);
 
-  const playersNeeded = Math.max(0, minPlayers - Number(num_players));
+  const playersNeeded = Math.max(0, minPlayers - Number(players.length));
 
   const handleStartGame = () => {
     const socket = getSocket();
