@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { MaterialIcons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect, CommonActions } from '@react-navigation/native';
+import { getSocket } from './socket';
 
 export default function GamePage() {
   const [currentBid, setCurrentBid] = useState(10);
@@ -25,6 +26,9 @@ export default function GamePage() {
   }, []);
 
   const handleBid = () => {
+    const socket = getSocket();
+
+    
     // Implement bid logic
     console.log('Bid placed:', bidAmount);
   };
