@@ -13,7 +13,7 @@ from game_logic import *
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["*"])
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 def generate_room_code(length=6):
@@ -196,10 +196,12 @@ def join_room():
         )
 
         # Notify all clients in the room about the new player
+        print(f"Emitting 'player_joined' event to room {room['_id']} with username {username}")
         socketio.emit('player_joined', {
             "roomId": str(room["_id"]),
             "username": username,
-            "num_players": num_players + 1
+            "num_players": num_players + 1,
+            "player_list": username_list,
         }, room=str(room["_id"]))
 
         return jsonify({
@@ -269,10 +271,13 @@ def handle_disconnect():
 
 @socketio.on('join_room')
 def handle_join_room(data):
+    print("Client joining room")
     room_id = data.get('roomId')
+    username = data.get('username')
     if room_id:
-        socketio.join_room(room_id)
-        print(f"Client joined room: {room_id}")
+        socketio.server.enter_room(sid=request.sid, room=room_id)
+        print(f"Client {username} joined room: {room_id}")
+        emit('joined_room', {"roomId": room_id, "username": username}, room=room_id)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

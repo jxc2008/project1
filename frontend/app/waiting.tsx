@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, ActivityIndicator, Button } from 'react-native'
 import { useLocalSearchParams } from 'expo-router';
 import io from 'socket.io-client';
 
-const socket = io('http://192.168.84.169:5000');
+const socket = io('http://192.168.84.169:5000', {
+  transports: ['websocket'],
+});
 
 interface Player {
   username: string;
@@ -23,8 +25,12 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   const [isHost, setIsHost] = useState(username === host_username);
 
   useEffect(() => {
+
+    console.log('Attempting to connect to Socket.IO server...');
+    
     socket.on('connect', () => {
       console.log('Connected to Socket.IO server');
+      socket.emit('join_room', { roomId: roomId, username: username });
     });
   
     socket.on('disconnect', () => {
