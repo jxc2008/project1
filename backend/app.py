@@ -95,6 +95,7 @@ def create_room():
             "roomId": str(result.inserted_id),
             "roomCode": room_code,
             "num_players": 1,
+            "player_list": [username]
         }), 201
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -167,11 +168,13 @@ def join_room():
             return jsonify({"message": "Room is full"}), 400
 
         # Check if username is already taken in this room
+        username_list = []
         name_taken = False
         for player in room["game"].players:
             if username == player.get_name():
                 name_taken = True
                 break
+            username_list.append(player.get_name())
         if name_taken:
             return jsonify({"message": "Username taken"}), 400
     
@@ -189,6 +192,7 @@ def join_room():
             "message": "Room created successfully",
             "roomId": str(room["_id"]),
             "num_players": num_players + 1,
+            "player_list": username_list
         }), 201
 
     except Exception as e:

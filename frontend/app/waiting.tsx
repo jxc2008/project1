@@ -13,7 +13,7 @@ interface WaitingRoomProps {
 }
 
 export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: WaitingRoomProps) {
-  const { roomName, roomId, username, num_players } = useLocalSearchParams();
+  const { roomName, roomId, username, num_players, player_list } = useLocalSearchParams();
   const [dots, setDots] = useState('.');
 
   useEffect(() => {
@@ -40,7 +40,9 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     return () => clearInterval(interval);
   }, []);
 
-  const playersNeeded = Math.max(0, minPlayers - currentPlayers.length);
+  const playersNeeded = Math.max(0, minPlayers - Number(num_players));
+
+  console.log(player_list);
 
   return (
     <View style={styles.container}>
@@ -58,18 +60,18 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
           </View>
           <View style={styles.playersContainer}>
             <Text style={styles.playersTitle}>Current Players:</Text>
-            {currentPlayers.length > 0 ? (
+            {Number(num_players) > 0 ? (
               <FlatList
-                data={currentPlayers}
-                keyExtractor={(item, index) => index.toString()}
+                data={player_list} // player_list is an array of strings
+                keyExtractor={(item, index) => index.toString()} // Use index as a key
                 renderItem={({ item }) => (
                   <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.username}</Text>
+                    <Text style={styles.badgeText}>{item}</Text> {/* Render the string directly */}
                   </View>
                 )}
                 numColumns={2}
                 contentContainerStyle={styles.playersList}
-              />
+              />            
             ) : (
               <Text style={styles.noPlayersText}>No players have joined yet.</Text>
             )}

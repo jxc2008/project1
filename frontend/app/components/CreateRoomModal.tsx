@@ -40,6 +40,7 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
           roomId: response.data.roomId,
           username: username,
           num_players: response.data.num_players,
+          player_list: response.data.player_list,
         }
       });
     } catch (error) {

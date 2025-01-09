@@ -50,13 +50,13 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
 
       Alert.alert('Success', 'Successfully joined the room!');
       onClose();
-
       router.push({
         pathname: '/waiting',
         params: {
           roomId: response.data.roomId,
           username: handle,
           num_players: response.data.num_players,
+          player_list: response.data.username_list,
         }
       });
 
