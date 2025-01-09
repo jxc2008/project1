@@ -14,7 +14,15 @@ from datetime import datetime
 
 app = Flask(__name__)
 CORS(app, origins=["*"])
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    logger=True,
+    engineio_logger=True,
+    ping_timeout=60,
+    ping_interval=25,
+    transports=['websocket']
+)
 
 def generate_room_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase, k=length))
@@ -280,4 +288,4 @@ def handle_join_room(data):
         emit('joined_room', {"roomId": room_id, "username": username}, room=room_id)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

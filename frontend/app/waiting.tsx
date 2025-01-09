@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Button } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import io from 'socket.io-client';
-
-const socket = io('http://192.168.84.169:5000', {
-  transports: ['websocket'],
-});
+import { getSocket } from './socket';
 
 interface Player {
   username: string;
@@ -25,6 +21,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   const [isHost, setIsHost] = useState(username === host_username);
 
   useEffect(() => {
+    const socket = getSocket();
 
     console.log('Attempting to connect to Socket.IO server...');
     
@@ -47,8 +44,12 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     });
 
     return () => {
+      console.log('Cleaning up Socket.IO connection...');
       socket.off('player_joined');
       socket.off('player_left');
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.disconnect();
     };
   }, []);
 
@@ -79,6 +80,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   const playersNeeded = Math.max(0, minPlayers - Number(num_players));
 
   const handleStartGame = () => {
+    const socket = getSocket();
     socket.emit('start_game', { roomId });
   };
 
