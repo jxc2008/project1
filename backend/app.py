@@ -93,7 +93,8 @@ def create_room():
         return jsonify({
             "message": "Room created successfully",
             "roomId": str(result.inserted_id),
-            "roomCode": room_code  # Send the short room code back
+            "roomCode": room_code,
+            "num_players": 1,
         }), 201
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -158,6 +159,7 @@ def join_room():
         
         room["game"] = deserialize_game(room.get("game", {}))
         num_players = len(room["game"].players)
+        print(num_players)
 
         # Check if room is full
         if num_players >= room.get('maxPlayers', 10):
