@@ -56,7 +56,8 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
           roomId: response.data.roomId,
           username: handle,
           num_players: response.data.num_players,
-          player_list: response.data.username_list,
+          player_list: response.data.player_list,
+          host_username: response.data.host_username,
         }
       });
 

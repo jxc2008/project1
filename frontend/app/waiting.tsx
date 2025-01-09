@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
-
+import { View, Text, StyleSheet, ActivityIndicator, Button } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import io from 'socket.io-client';
+
+const socket = io('http://192.168.84.169:5000');
 
 interface Player {
   username: string;
@@ -13,8 +15,36 @@ interface WaitingRoomProps {
 }
 
 export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: WaitingRoomProps) {
-  const { roomName, roomId, username, num_players, player_list } = useLocalSearchParams();
+  const { roomName, roomId, username, num_players, player_list, host_username } = useLocalSearchParams();
   const [dots, setDots] = useState('.');
+  const [players, setPlayers] = useState<string[]>(
+    Array.isArray(player_list) ? player_list : player_list.split(",")
+  );
+  const [isHost, setIsHost] = useState(username === host_username);
+
+  useEffect(() => {
+    socket.on('connect', () => {
+      console.log('Connected to Socket.IO server');
+    });
+  
+    socket.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server');
+    });
+
+    socket.on('player_joined', (data) => {
+      console.log('player_joined', data);
+      setPlayers((prevPlayers) => [...prevPlayers, data.username]);
+    });
+
+    socket.on('player_left', (data) => {
+      setPlayers((prevPlayers) => prevPlayers.filter((player) => player !== data.username));
+    });
+
+    return () => {
+      socket.off('player_joined');
+      socket.off('player_left');
+    };
+  }, []);
 
   useEffect(() => {
       const disconnect = () => {
@@ -42,7 +72,9 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
 
   const playersNeeded = Math.max(0, minPlayers - Number(num_players));
 
-  console.log(player_list);
+  const handleStartGame = () => {
+    socket.emit('start_game', { roomId });
+  };
 
   return (
     <View style={styles.container}>
@@ -59,23 +91,20 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
             </Text>
           </View>
           <View style={styles.playersContainer}>
-            <Text style={styles.playersTitle}>Current Players:</Text>
-            {Number(num_players) > 0 ? (
-              <FlatList
-                data={player_list} // player_list is an array of strings
-                keyExtractor={(item, index) => index.toString()} // Use index as a key
-                renderItem={({ item }) => (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item}</Text> {/* Render the string directly */}
+            <Text style={styles.playersTitle} >Current Players:</Text>
+              {players.length > 0 ? (
+                players.map((item, index) => (
+                  <View key={index} style = {styles.badge}>
+                    <Text style={styles.badgeText}>{item}</Text>
                   </View>
-                )}
-                numColumns={2}
-                contentContainerStyle={styles.playersList}
-              />            
-            ) : (
-              <Text style={styles.noPlayersText}>No players have joined yet.</Text>
-            )}
+                ))
+              ) : (
+                <Text style={styles.noPlayersText} >No players have joined yet.</Text>
+              )}
           </View>
+          {players.length >= minPlayers && isHost && (
+            <Button title="Start Game" onPress={handleStartGame} />
+          )}
         </View>
       </View>
     </View>

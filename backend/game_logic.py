@@ -21,6 +21,13 @@ class Game:
         self.market_active = True
         self.round_active = False
         self.fair_value = 0
+        self.host = None
+
+    def set_host(self, host):
+        self.host = host
+    
+    def get_host(self):
+        return self.host
     
     def player_join(self, player):
         self.players.append(player)

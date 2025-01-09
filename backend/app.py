@@ -3,16 +3,18 @@ from flask_cors import CORS
 from bson.objectid import ObjectId
 from models import rooms_collection
 
-import schedule
+from flask_socketio import SocketIO, emit
 
 import string
-
+import random
 import json
 
 from game_logic import *
+from datetime import datetime
 
-import time
-from datetime import datetime, timedelta, timezone
+app = Flask(__name__)
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def generate_room_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase, k=length))
@@ -27,6 +29,7 @@ def serialize_game(game):
             }
             for player in game.players
         ],
+        "host": game.get_host(),
         "player_count": game.player_count,
         "current_round": game.current_round
     }
@@ -48,13 +51,10 @@ def deserialize_game(game_data):
 
         game.player_join(player)
 
+    game.set_host( game_data.get("host", None) )
     game.player_count = game_data.get("player_count", 0)
     game.current_round = game_data.get("current_round", 0)
     return game
-
-
-app = Flask(__name__)
-CORS(app)
 
 @app.route('/create-room', methods=['POST'])
 def create_room():
@@ -79,6 +79,8 @@ def create_room():
     new_player.status = "active"
     game.player_join(new_player)
 
+    game.set_host(username)
+
     room = {
         "name": name,
         "password": password if password else None,
@@ -95,7 +97,8 @@ def create_room():
             "roomId": str(result.inserted_id),
             "roomCode": room_code,
             "num_players": 1,
-            "player_list": [username]
+            "player_list": [username],
+            "host_username": username
         }), 201
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -160,7 +163,6 @@ def join_room():
         
         room["game"] = deserialize_game(room.get("game", {}))
         num_players = len(room["game"].players)
-        print(num_players)
 
         # Check if room is full
         if num_players >= room.get('maxPlayers', 10):
@@ -175,24 +177,37 @@ def join_room():
                 name_taken = True
                 break
             username_list.append(player.get_name())
+            
         if name_taken:
             return jsonify({"message": "Username taken"}), 400
+        
+        username_list.append(username)
     
         #initiate new player
         new_player = Player(username)
         new_player.status = "active"
         room["game"].player_join(new_player)
 
+        host_username = room["game"].get_host()
+
         rooms_collection.update_one(
             {"_id": room["_id"]}, 
             {"$set": {"game": serialize_game(room["game"])}}
         )
 
+        # Notify all clients in the room about the new player
+        socketio.emit('player_joined', {
+            "roomId": str(room["_id"]),
+            "username": username,
+            "num_players": num_players + 1
+        }, room=str(room["_id"]))
+
         return jsonify({
             "message": "Room created successfully",
             "roomId": str(room["_id"]),
             "num_players": num_players + 1,
-            "player_list": username_list
+            "player_list": username_list,
+            "host_username": host_username,
         }), 201
 
     except Exception as e:
@@ -229,11 +244,35 @@ def player_disconnect():
                 {"_id": ObjectId(room_id)},
                 {"$set": {"game": serialize_game(game)}}
             )
+
+            # Notify all clients in the room about the player leaving
+            socketio.emit('player_left', {
+                "roomId": str(room["_id"]),
+                "username": username,
+                "num_players": game.player_count
+            }, room=str(room["_id"]))
+
             return jsonify({"message": "Player removed"}), 200
             
             
     except Exception as e:
         return jsonify({"message": str(e)}), 500
+
+# WebSocket event handlers
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+@socketio.on('join_room')
+def handle_join_room(data):
+    room_id = data.get('roomId')
+    if room_id:
+        socketio.join_room(room_id)
+        print(f"Client joined room: {room_id}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

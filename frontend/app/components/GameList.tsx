@@ -86,6 +86,8 @@ export default function GameList() {
           roomId: selectedRoom._id,
           username: username,
           num_players: response.data.num_players,
+          player_list: response.data.player_list,
+          host_username: response.data.host_username,
         }
       });
 
