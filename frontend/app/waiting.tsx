@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Button } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getSocket } from './socket';
 
 interface Player {
@@ -19,6 +19,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     Array.isArray(player_list) ? player_list : player_list.split(",")
   );
   const [isHost, setIsHost] = useState(username === host_username);
+  const router = useRouter(); // Router for navigation
 
   useEffect(() => {
     const socket = getSocket();
@@ -27,7 +28,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     
     socket.on('connect', () => {
       console.log('Connected to Socket.IO server');
-      socket.emit('join_room', { roomId: roomId, username: username });
+      socket.emit('join_room', { roomId, username });
     });
   
     socket.on('disconnect', () => {
@@ -43,31 +44,40 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
       setPlayers((prevPlayers) => prevPlayers.filter((player) => player !== data.username));
     });
 
+    socket.on('start_game', () => {
+      console.log('Game started, navigating to game screen...');
+      router.push({
+        pathname: '/game',
+        params: { roomId, username },
+      });
+    });
+
     return () => {
       console.log('Cleaning up Socket.IO connection...');
       socket.off('player_joined');
       socket.off('player_left');
       socket.off('connect');
       socket.off('disconnect');
+      socket.off('start_game');
       socket.disconnect();
     };
   }, []);
 
   useEffect(() => {
-      const disconnect = () => {
-        navigator.sendBeacon(
-          'http://localhost:5000/disconnect',
-          JSON.stringify({ roomId, username })
-        );
-      };
+    const disconnect = () => {
+      navigator.sendBeacon(
+        'http://localhost:5000/disconnect',
+        JSON.stringify({ roomId, username })
+      );
+    };
     
-      window.addEventListener('beforeunload', disconnect);
-      
-      return () => {
-        disconnect();
-        window.removeEventListener('beforeunload', disconnect);
-      };
-    }, []);
+    window.addEventListener('beforeunload', disconnect);
+    
+    return () => {
+      disconnect();
+      window.removeEventListener('beforeunload', disconnect);
+    };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -81,6 +91,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
 
   const handleStartGame = () => {
     const socket = getSocket();
+    console.log('Starting game...');
     socket.emit('start_game', { roomId });
   };
 
@@ -99,16 +110,16 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
             </Text>
           </View>
           <View style={styles.playersContainer}>
-            <Text style={styles.playersTitle} >Current Players:</Text>
-              {players.length > 0 ? (
-                players.map((item, index) => (
-                  <View key={index} style = {styles.badge}>
-                    <Text style={styles.badgeText}>{item}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noPlayersText} >No players have joined yet.</Text>
-              )}
+            <Text style={styles.playersTitle}>Current Players:</Text>
+            {players.length > 0 ? (
+              players.map((item, index) => (
+                <View key={index} style={styles.badge}>
+                  <Text style={styles.badgeText}>{item}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noPlayersText}>No players have joined yet.</Text>
+            )}
           </View>
           {players.length >= minPlayers && isHost && (
             <Button title="Start Game" onPress={handleStartGame} />

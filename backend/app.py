@@ -286,6 +286,13 @@ def handle_join_room(data):
         socketio.server.enter_room(sid=request.sid, room=room_id)
         print(f"Client {username} joined room: {room_id}")
         emit('joined_room', {"roomId": room_id, "username": username}, room=room_id)
+        
+@socketio.on('start_game')
+def handle_start_game(data):
+    room_id = data.get('roomId')
+    print(f"Starting game for room: {room_id}")
+    # Emit the start_game event to all clients in the room
+    socketio.emit('start_game', {"roomId": room_id}, room=room_id)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
