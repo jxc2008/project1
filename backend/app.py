@@ -382,6 +382,90 @@ def handle_start_game(data):
         "roomId": room_id,
         "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
     }, room=room_id)
+    
+@socketio.on('make_market')
+def handle_make_market(data):
+    room_id = data.get("roomId")
+    player_name = data.get("playerName")
+    action = data.get("action")
+    number = data.get("number")
+
+    # Fetch room and game
+    room = rooms_collection.find_one({"_id": ObjectId(room_id)})
+    if not room:
+        emit("market_update", {"success": False, "message": "Room not found"})
+        return
+
+    game = deserialize_game(room.get("game", {}))
+
+    # Execute make_the_market
+    result = game.make_the_market(player_name, action, number)
+
+    # Update database and notify players
+    if result["success"]:
+        rooms_collection.update_one(
+            {"_id": ObjectId(room_id)},
+            {"$set": {"game": serialize_game(game)}}
+        )
+        socketio.emit("market_update", {
+            "success": True,
+            "action": action,
+            "number": number,
+            "currentBid": game.current_bid,
+            "currentAsk": game.current_ask,
+            "bidPlayer": game.bid_player.name if game.bid_player else None,
+            "askPlayer": game.ask_player.name if game.ask_player else None,
+            "logMessage": result["message"],  # Include the log message
+        }, room=room_id)
+    else:
+        emit("market_update", result)
+
+@socketio.on('place_ask')
+def handle_place_ask(data):
+    room_id = data.get('roomId')
+    username = data.get('username')
+    value = int(data.get('value'))
+
+    room_data = rooms_collection.find_one({"_id": ObjectId(room_id)})
+    if not room_data:
+        print(f"Room {room_id} not found.")
+        emit('error', {'message': 'Room not found.'}, to=request.sid)
+        return
+
+    game = deserialize_game(room_data.get("game", {}))
+
+    # Validate the ask
+    if value >= game.current_ask:
+        emit('error', {'message': 'Ask must be less than the current ask.'}, to=request.sid)
+        return
+
+    # Update the ask
+    game.current_ask = value
+    game.ask_player = next((p for p in game.players if p.name == username), None)
+
+    if game.ask_player:
+        game.ask_player.record.append(['ask', value])
+    else:
+        emit('error', {'message': 'Player not found.'}, to=request.sid)
+        return
+
+    # Serialize and save the updated game state
+    rooms_collection.update_one(
+        {"_id": ObjectId(room_id)},
+        {"$set": {"game": serialize_game(game)}}
+    )
+
+    # Broadcast the updated market and log to all players
+    socketio.emit('update_market', {
+        'action': 'ask',
+        'value': value,
+        'player': username,
+        'currentAsk': game.current_ask,
+        'logMessage': f"{username} has placed an ask for ${value}."
+    }, room=room_id)
+
+    print(f"Player {username} placed an ask of ${value}.")
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    

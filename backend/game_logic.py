@@ -227,60 +227,40 @@ class Game:
 
 
 
-    def make_the_market(self):
-        print("Make your post!")
-        input_text = input()  # Example: "daniel bid 10"
-        
-        # Split the input into parts
-        parts = input_text.strip().split()
-        
-        if len(parts) != 3:
-            print("Invalid input format. Please use: <name> <action> <number>")
-            return
-        
-        name, action, number = parts[0], parts[1], parts[2]
-        
+    def make_the_market(self, player_name, action, number):
         # Step 1: Check if the player is in the player names array
-        player = next((player for player in self.players if player.name.lower() == name.lower()), None)
-        
+        player = next((player for player in self.players if player.name.lower() == player_name.lower()), None)
+
         if player is None:
-            print(f"Player '{name}' is not found.")
-            
+            return {"success": False, "message": "Player not found"}
+
         # Step 2: Check if the action is valid ("bid" or "ask")
         if action not in ["bid", "ask"]:
-            print(f"Invalid action '{action}'. Action must be 'bid' or 'ask'.")
-            return
-        
-        # Step 3: Check if the number is an integer between 1 and 20
-        try:
-            number = int(number)
-            if not (1 <= number <= 20):
-                print("Number must be an integer between 1 and 20.")
-                return
-        except ValueError:
-            print("Invalid number provided. Must be an integer between 1 and 20.")
-            return
-        
+            return {"success": False, "message": "Invalid action"}
+
+        # Step 3: Check if the number is valid
+        if not isinstance(number, int) or not (1 <= number <= 20):
+            return {"success": False, "message": "Invalid number"}
+
+        log_message = ""
         if action == "bid":
             if number <= self.current_bid:
-                print(f"Bid must be greater than the market's bid ({self.current_bid}).")
-                return
+                return {"success": False, "message": "Bid must be greater than the current bid"}
             self.current_bid = number
             self.bid_player = player
-            print(f"Market's bid updated to {self.current_bid} by player {name}.")
             player.record.append(["bid", number])
+            log_message = f"{player_name} has placed a bid for ${number}"
         elif action == "ask":
             if number >= self.current_ask:
-                print(f"Ask must be less than the market's ask ({self.current_ask}).")
-                return
+                return {"success": False, "message": "Ask must be less than the current ask"}
             self.current_ask = number
             self.ask_player = player
-            print(f"Market's ask updated to {self.current_ask} by player {name}.")
             player.record.append(["ask", number])
-        
-        # If all checks pass
-        print(f"Player: {player.name}, Action: {action}, Number: {number}")
-        print(f"Player {player.name} {action}s for ${number}")
+            log_message = f"{player_name} has placed an ask for ${number}"
+
+        return {"success": True, "message": log_message}
+
+
         
     def take_the_market(self):
         print("Market Interaction: Use '<name> hit' to sell at the current bid or '<name> lift' to buy at the current ask.")
