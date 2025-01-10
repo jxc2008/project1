@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, Tex
 import { MaterialIcons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
-import { getSocket } from './socket';
+import { getSocket } from '../utils/socket';
 
 import PlayerInfoPopup, { PlayerRole } from './components/PlayerInfoPopup';
 
@@ -151,45 +151,112 @@ export default function GamePage() {
     const socket = getSocket();
     const number = parseInt(bidAmount, 10);
   
-    if (isNaN(number)) {
-      console.error("Invalid bid amount");
+    if (isNaN(number) || number < 1 || number > 20) {
+      alert('Invalid bid. It must be between 1 and 20.');
       return;
     }
   
-    socket.emit("make_market", { roomId, playerName: username, action: "bid", number }); // update!
-    setBidAmount(""); // update!
+    // Check if the bid crosses the current ask
+    if (currentAsk < 21 && number >= currentAsk) {
+      alert("Your bid is higher than or equal to the current ask. Consider lifting the ask instead!");
+      return;
+    }
+  
+    // Ensure the bid is higher than the current bid
+    if (number <= currentBid) {
+      alert('Invalid bid. It must be greater than the current bid.');
+      return;
+    }
+  
+    socket.emit("make_market", { roomId, playerName: username, action: "bid", number });
+    setBidAmount("");
   };
+  
   
   const handleAsk = () => {
     const socket = getSocket();
     const value = parseInt(askAmount, 10);
-
-    if (isNaN(value) || value >= currentAsk || value < 1 || value > 20) {
-      alert('Invalid ask. It must be less than the current ask and between 1 and 20.');
+  
+    if (isNaN(value) || value < 1 || value > 20) {
+      alert('Invalid ask. It must be between 1 and 20.');
       return;
     }
-
-    socket.emit("make_market", { roomId, playerName: username, action: "ask", number: value }); // update!
-    setAskAmount(""); // update!
+  
+    // Check if the ask crosses the current bid
+    if (currentBid > 0 && value <= currentBid) {
+      alert("Your ask is lower than or equal to the current bid. Consider hitting the bid instead!");
+      return;
+    }
+  
+    // Ensure the ask is less than the current ask
+    if (value >= currentAsk) {
+      alert('Invalid ask. It must be less than the current ask.');
+      return;
+    }
+  
+    socket.emit("make_market", { roomId, playerName: username, action: "ask", number: value });
+    setAskAmount("");
   };
+  
 
-  useEffect(() => {
+  const handleHitBid = () => { // Update!
     const socket = getSocket();
   
-    socket.on('market_update', (data) => { // update!
-      if (data.action === 'ask') {
-        setCurrentAsk(data.currentAsk);
-        setGameLog((prevLog) => [...prevLog, data.logMessage]);
-      } else if (data.action === 'bid') {
-        setCurrentBid(data.currentBid);
-        setGameLog((prevLog) => [...prevLog, data.logMessage]);
-      }
-    });
+    if (currentBid > 0) { // Allow hitting the bid if bid > 0
+      socket.emit("take_market", {
+        roomId,
+        playerName: username,
+        action: "hit",
+      });
+    } else {
+      alert("No valid bid to hit.");
+    }
+  };
+
+  const handleLiftAsk = () => { // Update!
+    const socket = getSocket();
   
-    return () => {
-      socket.off('market_update');
-    };
-  }, []);
+    if (currentAsk < 21) { // Allow lifting the ask if ask < 21
+      socket.emit("take_market", {
+        roomId,
+        playerName: username,
+        action: "lift",
+      });
+    } else {
+      alert("No valid ask to lift.");
+    }
+  };
+  
+
+  useEffect(() => {
+  const socket = getSocket();
+
+  socket.on("market_update", (data) => {
+    if (data.action === "hit") {
+      setGameLog((prevLog) => [
+        ...prevLog,
+        `${data.playerName} has hit the bid! Sold to ${data.bidPlayer} for $${data.price}.`, // Update!
+      ]);
+      setCurrentBid(0); // Reset the bid
+    } else if (data.action === "lift") {
+      setGameLog((prevLog) => [
+        ...prevLog,
+        `${data.playerName} has lifted the ask! Bought from ${data.askPlayer} for $${data.price}.`, // Update!
+      ]);
+      setCurrentAsk(21); // Reset the ask
+    } else if (data.action === "ask") {
+      setCurrentAsk(data.currentAsk);
+      setGameLog((prevLog) => [...prevLog, data.logMessage]);
+    } else if (data.action === "bid") {
+      setCurrentBid(data.currentBid);
+      setGameLog((prevLog) => [...prevLog, data.logMessage]);
+    }
+  });
+
+  return () => {
+    socket.off("market_update");
+  };
+}, []);
 
   const handleLeaveGame = () => {
     if (window.confirm('Are you sure you want to leave the game?')) {
@@ -240,6 +307,7 @@ export default function GamePage() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Trade Gems</Text>
               <View style={styles.cardContent}>
+                {/* Input Fields for Bid and Ask */}
                 <View style={styles.inputRow}>
                   <TextInput
                     style={styles.input}
@@ -264,6 +332,16 @@ export default function GamePage() {
                     <Text style={styles.buttonText}>Place Ask</Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* Side-by-Side Buttons */}
+                <View style={styles.buttonRow}> {/* Update! */}
+                  <TouchableOpacity style={styles.secondaryButton} onPress={handleHitBid}>
+                    <Text style={styles.buttonText}>Hit the Bid!</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.secondaryButton} onPress={handleLiftAsk}>
+                    <Text style={styles.buttonText}>Lift the Ask!</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
   
@@ -271,22 +349,30 @@ export default function GamePage() {
               <Text style={styles.cardTitle}>Player Info</Text>
               <View style={styles.cardContent}>
                 <View style={styles.infoRow}>
-                  <FontAwesome5 name="user" size={20} color="black" />
+                  <FontAwesome5 name="user" size={23} color="black" />
                   <Text style={styles.infoText}>Your Role:</Text>
                   <Text style={styles.infoValue}>{playerRole}</Text>
                 </View>
+                <View style={styles.infoRow}> {/* update! */}
+                 <FontAwesome name="file-contract" size={33} color="black" /> {/* update! */}
+                 <Text style={styles.infoText}>Trading Information:</Text> {/* update! */}
+                  <Text style={styles.infoValue}> {/* update! */}
+                    {playerRole === 'contractor' && playerInfo.contract
+                      ? `${playerInfo.contract.type_of_action.toLowerCase()}, ${playerInfo.contract.number}`
+                      : playerRole === 'insider'
+                      ? (playerInfo.diceRoll !== undefined
+                          ? `Dice Roll: ${playerInfo.diceRoll}`
+                          : `Coin Flip: ${playerInfo.coinFlip}`)
+                      : 'N/A'}
+                  </Text> {/* update! */}
+                </View> {/* update! */}
                 <View style={styles.infoRow}>
-                  <FontAwesome name="file-contract" size={20} color="black" />
-                  <Text style={styles.infoText}>Trade Contract:</Text>
-                  <Text style={styles.infoValue}>{tradeContract}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <FontAwesome5 name="gem" size={20} color="black" />
+                  <FontAwesome5 name="gem" size={25} color="black" />
                   <Text style={styles.infoText}>Round:</Text>
                   <Text style={styles.infoValue}>{currentRound}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <FontAwesome5 name="clock" size={20} color="black" />
+                  <FontAwesome5 name="clock" size={27} color="black" />
                   <Text style={styles.infoText}>Time Left:</Text>
                   <Text style={styles.infoValue}>{timeLeft}s</Text>
                 </View>
@@ -380,6 +466,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 8,
   },
+  secondaryButton: {
+    backgroundColor: '#28a745', // Green color for trade buttons
+    borderRadius: 4,
+    padding: 8,
+    marginVertical: 8,
+    alignSelf: 'center',
+    minWidth: '45%',
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
   buttonText: {
     color: 'white',
     fontSize: 16,
@@ -403,4 +499,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  buttonRow: { // update!
+    flexDirection: 'row', // update!
+    justifyContent: 'space-between', // update!
+  }, // update!
 });

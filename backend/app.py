@@ -214,9 +214,9 @@ def get_rooms():
                 "name": room["name"],
                 "players": [player.to_dict() for player in game.players],  # Serialize players to dict
                 "player_count": game.player_count,
-                "maxPlayers": room.get("maxPlayers", 10),
-                "isPrivate": room.get("isPrivate", False),
-                "room_code": room.get("room_code")
+                "maxPlayers": room.get('maxPlayers', 10),
+                "isPrivate": room.get('isPrivate', False),
+                "room_code": room.get('room_code')
             }
             formatted_rooms.append(formatted_room)
             
@@ -364,8 +364,6 @@ def handle_join_room(data):
         print(f"Client {username} joined room: {room_id}")
         emit('joined_room', {"roomId": room_id, "username": username}, room=room_id)
 
-
-
 @socketio.on('start_game')
 def handle_start_game(data):
     room_id = data.get('roomId')
@@ -373,7 +371,6 @@ def handle_start_game(data):
 
     game = deserialize_game(rooms_collection.find_one({"_id": ObjectId(room_id)}).get("game", {}))
     game.start_game()
-
 
     game_data = serialize_game(game)
 
@@ -419,6 +416,41 @@ def handle_make_market(data):
         }, room=room_id)
     else:
         emit("market_update", result)
+
+@socketio.on('take_market')
+def handle_take_market(data):  # update!
+    room_id = data.get("roomId")  # update!
+    player_name = data.get("playerName")  # update!
+    action = data.get("action")  # update!
+
+    room = rooms_collection.find_one({"_id": ObjectId(room_id)})  # update!
+    if not room:  # update!
+        emit("market_update", {"success": False, "message": "Room not found"})  # update!
+        return  # update!
+
+    game = deserialize_game(room.get("game", {}))  # update!
+    target_player = game.bid_player if action=="hit" else game.ask_player  # update!
+    price = game.current_bid if action=="hit" else game.current_ask  # update!
+
+    result = game.take_the_market(player_name, action)  # update!
+
+    if result["success"]:  # update!
+         target_name = target_player.name if target_player else None  # update!
+         rooms_collection.update_one(  # update!
+            {"_id": ObjectId(room_id)},
+            {"$set": {"game": serialize_game(game)}}
+         )  # update!
+         socketio.emit("market_update", {  # update!
+            "success": True,
+            "action": action,
+            "price": price,
+            "playerName": player_name,
+            "bidPlayer": target_name if action=="hit" else None,
+            "askPlayer": target_name if action=="lift" else None,
+            "logMessage": result["message"],
+        }, room=room_id)  # update!
+    else:
+        emit("market_update", result)  # update!
 
 @socketio.on('place_ask')
 def handle_place_ask(data):
@@ -468,4 +500,3 @@ def handle_place_ask(data):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-    

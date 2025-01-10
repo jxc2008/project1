@@ -262,67 +262,60 @@ class Game:
 
 
         
-    def take_the_market(self):
-        print("Market Interaction: Use '<name> hit' to sell at the current bid or '<name> lift' to buy at the current ask.")
-        input_text = input("Enter your command: ").strip()
-        
-        # Split the input into parts
-        parts = input_text.split()
-        
-        if len(parts) != 2:
-            print("Invalid format. Please use '<name> hit' or '<name> lift'.")
-            return
-        
-        name, action = parts[0], parts[1].lower()
-        
-        # Validate the player name
-        player = next((p for p in self.players if p.name.lower() == name.lower()), None)
+    def take_the_market(self, player_name, action):
+        player = next((p for p in self.players if p.name.lower() == player_name.lower()), None)
         if not player:
-            print(f"Player '{name}' not found.")
-            return
-        
-        # Validate action
-        if action not in ["hit", "lift"]:
-            print("Invalid action. Please use 'hit' or 'lift'.")
-            return
-        
-        # Handle 'hit' action (sell at current bid)
+            return {"success": False, "message": "Player not found."}
+
         if action == "hit":
             if self.current_bid == 0:
-                print("No valid bid available to hit.")
-                return
-            
-            if self.bid_player is not None:
-                self.hit_player = player  # Track the player hitting the bid
-                self.hit_player.sell_count += 1 # Increments hit_player's sell_count by 1
-                self.bid_player.buy_count += 1 # Increments bid_player's buy_count by 1
-                self.hit_player.record.append(["short", self.current_bid])
-                self.bid_player.record.append(["long", self.current_bid])
-                print(f"{self.hit_player.name} sold to {self.bid_player.name} at the bid price of ${self.current_bid}.")
-                self.current_bid = 0  # Reset the bid after transaction
-                self.bid_player = None  # Clear the bid player
-                self.hit_player = None  # Clear the hit player
-            else:
-                print("Bidder not found. Transaction failed.")
-        
-        # Handle 'lift' action (buy at current ask)
+                return {"success": False, "message": "No valid bid available to hit."}
+            if not self.bid_player:
+                return {"success": False, "message": "Bid player not found."}
+            # Disallow self-hit
+            if player_name.lower() == self.bid_player.name.lower():
+                return {"success": False, "message": "You cannot hit your own bid."}
+
+            # Execute trade for hit
+            self.hit_player = player
+            self.hit_player.sell_count += 1
+            self.bid_player.buy_count += 1
+            self.hit_player.record.append(["short", self.current_bid])
+            self.bid_player.record.append(["long", self.current_bid])
+
+            message = f"{player_name} has hit the bid! Sold to {self.bid_player.name} for ${self.current_bid}."
+            self.current_bid = 0
+            self.bid_player = None
+            self.hit_player = None
+
+            return {"success": True, "message": message}
+
         elif action == "lift":
-            if self.current_ask == 0 or self.current_ask == 21:
-                print("No valid ask available to lift.")
-                return
-            
-            if self.ask_player is not None:
-                self.lift_player = player  # Track the player lifting the ask
-                self.lift_player.buy_count += 1 # Increments lift_player's buy_count by 1
-                self.ask_player.sell_count += 1 # Increments ask_player's sell_count by 1
-                self.lift_player.record.append(["long", self.current_ask])
-                self.ask_player.record.append(["short", self.current_ask])
-                print(f"{self.lift_player.name} bought from {self.ask_player.name} at the ask price of ${self.current_ask}.")
-                self.current_ask = 21  # Reset ask after transaction
-                self.ask_player = None  # Clear the ask player
-                self.lift_player = None  # Clear the lift player
-            else:
-                print("Asker not found. Transaction failed.")
+            if self.current_ask == 21:
+                return {"success": False, "message": "No valid ask available to lift."}
+            if not self.ask_player:
+                return {"success": False, "message": "Ask player not found."}
+            # Disallow self-lift
+            if player_name.lower() == self.ask_player.name.lower():
+                return {"success": False, "message": "You cannot lift your own ask."}
+
+            # Execute trade for lift
+            self.lift_player = player
+            self.lift_player.buy_count += 1
+            self.ask_player.sell_count += 1
+            self.lift_player.record.append(["long", self.current_ask])
+            self.ask_player.record.append(["short", self.current_ask])
+
+            message = f"{player_name} has lifted the ask! Bought from {self.ask_player.name} for ${self.current_ask}."
+            self.current_ask = 21
+            self.ask_player = None
+            self.lift_player = None
+
+            return {"success": True, "message": message}
+
+        return {"success": False, "message": "Invalid action. Use 'hit' or 'lift'."}
+
+
 
 
 

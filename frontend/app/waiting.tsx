@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Button } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getSocket } from './socket';
+import { getSocket } from '../utils/socket';
 
 interface Player {
   username: string;
