@@ -44,12 +44,17 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
       setPlayers((prevPlayers) => prevPlayers.filter((player) => player !== data.username));
     });
 
-    socket.on('start_game', () => {
+    socket.on('start_game', (data) => {
       console.log('Game started, navigating to game screen...');
-      router.push({
-        pathname: '/game',
-        params: { roomId, username },
-      });
+      const { roomId, gameData } = data;
+      try { 
+        router.push({
+          pathname: '/game',
+          params: { roomId, username, gameData: JSON.stringify(gameData) },
+        });
+      } catch (error) {
+        console.error('Failed to parse gameData:', error);
+      }
     });
 
     return () => {

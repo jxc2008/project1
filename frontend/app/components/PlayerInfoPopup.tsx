@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-na
 import InsiderInfo from "./InsiderInfo";
 import ContractorInfo from "./ContractorInfo";
 
-type PlayerRole = "insider" | "contractor";
+export type PlayerRole = "insider" | "contractor";
 
 interface PlayerInfoPopupProps {
   role: PlayerRole;

@@ -17,7 +17,7 @@ export default function InsiderInfo({ info }: InsiderInfoProps) {
             Dice Roll: <Text style={styles.boldText}>{info.diceRoll}</Text>
           </Text>
         )}
-        {info.coinFlip !== undefined && (
+        {info.coinFlip !== undefined && info.diceRoll == undefined && (
           <Text style={styles.text}>
             Coin Flip: <Text style={styles.boldText}>{info.coinFlip}</Text>
           </Text>

@@ -3,21 +3,24 @@ import { View, Text, StyleSheet } from "react-native";
 
 interface ContractorInfoProps {
   info: {
-    contract: [string, number];
+    contract: {
+      type_of_action: string;
+      number: number;
+    };
   };
 }
 
 export default function ContractorInfo({ info }: ContractorInfoProps) {
-  const [position, amount] = info.contract;
+  const { type_of_action, number } = info.contract;
 
   return (
     <View style={styles.card}>
       <View style={styles.cardContent}>
         <Text style={styles.text}>
-          Position: <Text style={styles.boldText}>{position}</Text>
+          Position: <Text style={styles.boldText}>{type_of_action}</Text>
         </Text>
         <Text style={styles.text}>
-          Amount: <Text style={styles.boldText}>{amount}</Text>
+          Amount: <Text style={styles.boldText}>{number}</Text>
         </Text>
       </View>
     </View>

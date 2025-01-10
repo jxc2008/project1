@@ -374,8 +374,14 @@ def handle_start_game(data):
     game = deserialize_game(rooms_collection.find_one({"_id": ObjectId(room_id)}).get("game", {}))
     game.start_game()
 
+
+    game_data = serialize_game(game)
+
     # Emit the start_game event to all clients in the room
-    socketio.emit('start_game', {"roomId": room_id}, room=room_id)
+    socketio.emit('start_game', {
+        "roomId": room_id,
+        "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
+    }, room=room_id)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
