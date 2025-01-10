@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { MaterialIcons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation, CommonActions } from '@react-navigation/native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import { getSocket } from './socket';
 
 import PlayerInfoPopup, { PlayerRole } from './components/PlayerInfoPopup';
@@ -10,8 +10,10 @@ import PlayerInfoPopup, { PlayerRole } from './components/PlayerInfoPopup';
 export default function GamePage() {
 
   const [loading, setLoading] = useState(true);
-
-  // Existing state variables
+  const [gameLog, setGameLog] = useState<string[]>([
+    'Round has started! Place your bids and asks now.',
+  ]); 
+  const scrollRef = useRef<ScrollView>(null); // Unified ref for the log scroll view - update!
   const [currentBid, setCurrentBid] = useState(0);
   const [currentAsk, setCurrentAsk] = useState(21);
   const [playerBalance, setPlayerBalance] = useState(0);
@@ -21,10 +23,8 @@ export default function GamePage() {
   const [bidAmount, setBidAmount] = useState('');
   const [askAmount, setAskAmount] = useState('');
   
-
   const [playerInfo, setPlayerInfo] = useState<{ contract: any; diceRoll?: number; coinFlip?: string }>({ contract: null });
 
-  // State variables for parsed game data
   const [host, setHost] = useState('');
   const [playerCount, setPlayerCount] = useState(0);
   const [currentRound, setCurrentRound] = useState(0);
@@ -41,7 +41,6 @@ export default function GamePage() {
     liftPlayer: null,
   });
 
-  // Extract roomId, username, and gameData from URL params
   const { roomId, username, gameData } = useLocalSearchParams();
 
   useEffect(() => {
@@ -49,16 +48,14 @@ export default function GamePage() {
       console.error('gameData is undefined or null');
       setLoading(true);
       return;
-    }; // Exit if gameData is not available
+    }
 
     console.log("CODE IS RUNNING");
 
     try {
-      // Parse gameData into an object
       const parsedGameData = JSON.parse(Array.isArray(gameData) ? gameData[0] : gameData);
       const finalData = typeof parsedGameData === 'string' ? JSON.parse(parsedGameData) : parsedGameData;
     
-      // Set basic state variables from finalData
       setHost(finalData.host);
       setPlayerCount(finalData.player_count);
       setCurrentRound(finalData.current_round);
@@ -84,12 +81,10 @@ export default function GamePage() {
       console.log('Players Data:', playersData);
       console.log('Current username:', username);
 
-      // Find the current player
       const currentPlayer = playersData.find(p => p.username === username);
       console.log('Current player found:', currentPlayer);
 
       if (currentPlayer) {
-        // Check if player has a contract with type_of_action
         if (currentPlayer.contract && currentPlayer.contract.type_of_action) {
           setPlayerInfo({
             contract: currentPlayer.contract
@@ -97,7 +92,6 @@ export default function GamePage() {
           setPlayerRole('contractor');
           console.log('Set as contractor with contract:', currentPlayer.contract);
         } else {
-          // Check if player has dice roll in their record
           const hasDiceRoll = currentPlayer.record.some(record => record[0] === 'dice_roll');
           const diceRoll = hasDiceRoll ? 
             currentPlayer.record.find(record => record[0] === 'dice_roll')[1] : 
@@ -124,6 +118,28 @@ export default function GamePage() {
   const navigation = useNavigation();
 
   useEffect(() => {
+    const socket = getSocket();
+
+    socket.on('player_left', (data) => {
+      console.log(`${data.username} has left the game.`);
+      setGameLog((prevLog) => [
+        ...prevLog,
+        `${data.username} has left the game.`,
+      ]);
+    });
+
+    return () => {
+      socket.off('player_left');
+    };
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollToEnd({ animated: true });
+    }
+  }, [gameLog]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => (prevTime > 0 ? prevTime - 1 : 0));
     }, 1000);
@@ -133,28 +149,57 @@ export default function GamePage() {
 
   const handleBid = () => {
     const socket = getSocket();
-
-    
-    // Implement bid logic
-    console.log('Bid placed:', bidAmount);
+    const number = parseInt(bidAmount, 10);
+  
+    if (isNaN(number)) {
+      console.error("Invalid bid amount");
+      return;
+    }
+  
+    socket.emit("make_market", { roomId, playerName: username, action: "bid", number }); // update!
+    setBidAmount(""); // update!
   };
-
+  
   const handleAsk = () => {
-    // Implement ask logic
-    console.log('Ask placed:', askAmount);
+    const socket = getSocket();
+    const value = parseInt(askAmount, 10);
+
+    if (isNaN(value) || value >= currentAsk || value < 1 || value > 20) {
+      alert('Invalid ask. It must be less than the current ask and between 1 and 20.');
+      return;
+    }
+
+    socket.emit("make_market", { roomId, playerName: username, action: "ask", number: value }); // update!
+    setAskAmount(""); // update!
   };
+
+  useEffect(() => {
+    const socket = getSocket();
+  
+    socket.on('market_update', (data) => { // update!
+      if (data.action === 'ask') {
+        setCurrentAsk(data.currentAsk);
+        setGameLog((prevLog) => [...prevLog, data.logMessage]);
+      } else if (data.action === 'bid') {
+        setCurrentBid(data.currentBid);
+        setGameLog((prevLog) => [...prevLog, data.logMessage]);
+      }
+    });
+  
+    return () => {
+      socket.off('market_update');
+    };
+  }, []);
 
   const handleLeaveGame = () => {
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'Home' }],
-      })
-    );
+    if (window.confirm('Are you sure you want to leave the game?')) {
+      console.log('Redirecting to the homepage...');
+      const HOMEPAGE_URL = process.env.HOMEPAGE_URL || "http://localhost:8081"; // update!
+      window.location.href = HOMEPAGE_URL; // update!
+    }
   };
 
   if (loading) {
-    console.log(loading);
     return (
       <SafeAreaView style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -164,15 +209,13 @@ export default function GamePage() {
       </SafeAreaView>
     );
   } else {
-    console.log(playerRole)
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <PlayerInfoPopup role = {playerRole} info = {playerInfo} />
+          <PlayerInfoPopup role={playerRole} info={playerInfo} />
           <Text style={styles.title}>Gem Trading Game</Text>
   
           <View style={styles.gridContainer}>
-            {/* Market Information */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Market Info</Text>
               <View style={styles.cardContent}>
@@ -194,7 +237,6 @@ export default function GamePage() {
               </View>
             </View>
   
-            {/* Trading Actions */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Trade Gems</Text>
               <View style={styles.cardContent}>
@@ -225,7 +267,6 @@ export default function GamePage() {
               </View>
             </View>
   
-            {/* Player Information */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Player Info</Text>
               <View style={styles.cardContent}>
@@ -253,19 +294,17 @@ export default function GamePage() {
             </View>
           </View>
   
-          {/* Game Log */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Game Log</Text>
-            <View style={styles.cardContent}>
-              <ScrollView style={styles.logContainer}>
-                <Text>Round 1 started. You are a Trader.</Text>
-                <Text>Player 2 placed a bid of $15.</Text>
-                <Text>Player 3 placed an ask of $18.</Text>
-              </ScrollView>
-            </View>
+              <Text style={styles.cardTitle}>Game Log</Text>
+              <View style={styles.cardContent}>
+                <ScrollView style={styles.logContainer} ref={scrollRef}>
+                  {gameLog.map((log, index) => (
+                    <Text key={index}>{log}</Text>
+                  ))}
+                </ScrollView>
+              </View>
           </View>
   
-          {/* Leave Game Button */}
           <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveGame}>
             <Text style={styles.leaveButtonText}>Leave Game</Text>
           </TouchableOpacity>
