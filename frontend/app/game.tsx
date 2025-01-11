@@ -1,11 +1,152 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { MaterialIcons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { getSocket } from '../utils/socket';
 
 import PlayerInfoPopup, { PlayerRole } from './components/PlayerInfoPopup';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFEDCC',
+  },
+  scrollContainer: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    width: '100%',
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  cardContent: {
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoText: {
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  infoValue: {
+    marginLeft: 'auto',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    padding: 8,
+    marginRight: 8,
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    borderRadius: 4,
+    padding: 8,
+  },
+  secondaryButton: {
+    backgroundColor: '#28a745', // Green color for trade buttons
+    borderRadius: 4,
+    padding: 8,
+    marginVertical: 8,
+    alignSelf: 'center',
+    minWidth: '45%',
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  logContainer: {
+    maxHeight: 100,
+    padding: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 4,
+  },
+  leaveButton: {
+    backgroundColor: '#DC3545',
+    borderRadius: 4,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  leaveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  endModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Gray out background
+  },
+  endModalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    maxWidth: '80%',
+  },
+  endModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  endModalMessage: {
+    fontSize: 18,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  endModalButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 4,
+    marginTop: 20,
+  },
+  endModalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
 
 export default function GamePage() {
 
@@ -18,10 +159,14 @@ export default function GamePage() {
   const [currentAsk, setCurrentAsk] = useState(21);
   const [playerBalance, setPlayerBalance] = useState(0);
   const [playerRole, setPlayerRole] = useState<PlayerRole>(null);
-  const [timeLeft, setTimeLeft] = useState(300);
   const [tradeContract, setTradeContract] = useState('');
   const [bidAmount, setBidAmount] = useState('');
   const [askAmount, setAskAmount] = useState('');
+  const roundDuration = 10; // 300 seconds for the round
+  const [endTime, setEndTime] = useState(Date.now() + roundDuration * 1000);
+  const [timeLeft, setTimeLeft] = useState(roundDuration);
+  const [endRoundPopup, setEndRoundPopup] = useState(false);
+
   
   const [playerInfo, setPlayerInfo] = useState<{ contract: any; diceRoll?: number; coinFlip?: string }>({ contract: null });
 
@@ -141,11 +286,13 @@ export default function GamePage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft((prevTime) => (prevTime > 0 ? prevTime - 1 : 0));
+      const newTimeLeft = Math.max(Math.floor((endTime - Date.now()) / 1000), 0);
+      setTimeLeft(newTimeLeft);
     }, 1000);
-
+  
     return () => clearInterval(timer);
-  }, []);
+  }, [endTime]);
+  
 
   const handleBid = () => {
     const socket = getSocket();
@@ -158,7 +305,8 @@ export default function GamePage() {
   
     // Check if the bid crosses the current ask
     if (currentAsk < 21 && number >= currentAsk) {
-      alert("Your bid is higher than or equal to the current ask. Consider lifting the ask instead!");
+      alert("Your bid is higher than or equal to the current ask. Consider hitting the bid or lifting the ask instead.");
+      // After alert is dismissed, the timer will update based on the recalculated timeLeft.
       return;
     }
   
@@ -226,6 +374,12 @@ export default function GamePage() {
       alert("No valid ask to lift.");
     }
   };
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      setEndRoundPopup(true);
+    }
+  }, [timeLeft]);
   
 
   useEffect(() => {
@@ -332,9 +486,9 @@ export default function GamePage() {
                     <Text style={styles.buttonText}>Place Ask</Text>
                   </TouchableOpacity>
                 </View>
-
+  
                 {/* Side-by-Side Buttons */}
-                <View style={styles.buttonRow}> {/* Update! */}
+                <View style={styles.buttonRow}>
                   <TouchableOpacity style={styles.secondaryButton} onPress={handleHitBid}>
                     <Text style={styles.buttonText}>Hit the Bid!</Text>
                   </TouchableOpacity>
@@ -353,10 +507,10 @@ export default function GamePage() {
                   <Text style={styles.infoText}>Your Role:</Text>
                   <Text style={styles.infoValue}>{playerRole}</Text>
                 </View>
-                <View style={styles.infoRow}> {/* update! */}
-                 <FontAwesome name="file-contract" size={33} color="black" /> {/* update! */}
-                 <Text style={styles.infoText}>Trading Information:</Text> {/* update! */}
-                  <Text style={styles.infoValue}> {/* update! */}
+                <View style={styles.infoRow}>
+                  <FontAwesome name="file-contract" size={33} color="black" />
+                  <Text style={styles.infoText}>Trading Information:</Text>
+                  <Text style={styles.infoValue}>
                     {playerRole === 'contractor' && playerInfo.contract
                       ? `${playerInfo.contract.type_of_action.toLowerCase()}, ${playerInfo.contract.number}`
                       : playerRole === 'insider'
@@ -364,8 +518,8 @@ export default function GamePage() {
                           ? `Dice Roll: ${playerInfo.diceRoll}`
                           : `Coin Flip: ${playerInfo.coinFlip}`)
                       : 'N/A'}
-                  </Text> {/* update! */}
-                </View> {/* update! */}
+                  </Text>
+                </View>
                 <View style={styles.infoRow}>
                   <FontAwesome5 name="gem" size={25} color="black" />
                   <Text style={styles.infoText}>Round:</Text>
@@ -381,126 +535,47 @@ export default function GamePage() {
           </View>
   
           <View style={styles.card}>
-              <Text style={styles.cardTitle}>Game Log</Text>
-              <View style={styles.cardContent}>
-                <ScrollView style={styles.logContainer} ref={scrollRef}>
-                  {gameLog.map((log, index) => (
-                    <Text key={index}>{log}</Text>
-                  ))}
-                </ScrollView>
-              </View>
+            <Text style={styles.cardTitle}>Game Log</Text>
+            <View style={styles.cardContent}>
+              <ScrollView style={styles.logContainer} ref={scrollRef}>
+                {gameLog.map((log, index) => (
+                  <Text key={index}>{log}</Text>
+                ))}
+              </ScrollView>
+            </View>
           </View>
   
           <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveGame}>
             <Text style={styles.leaveButtonText}>Leave Game</Text>
           </TouchableOpacity>
         </ScrollView>
+  
+        {/* End-of-Round Modal */}
+        {endRoundPopup && (
+          <Modal
+            transparent={true}
+            visible={endRoundPopup}
+            animationType="fade"
+            onRequestClose={() => {}}
+          >
+            <View style={styles.endModalContainer}>
+              <View style={styles.endModalContent}>
+                <Text style={styles.endModalTitle}>End of Round {currentRound}!</Text>
+                <Text style={styles.endModalMessage}>Fair Value: {fairValue}</Text>
+                <Text style={styles.endModalMessage}>
+                  Total PnL: {/* Insert actual PnL calculation or placeholder */}
+                </Text>
+                <TouchableOpacity
+                  style={styles.endModalButton}
+                  onPress={() => setEndRoundPopup(false)}
+                >
+                  <Text style={styles.endModalButtonText}>OK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        )}
       </SafeAreaView>
     );
-  } 
+  }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFEDCC',
-  },
-  scrollContainer: {
-    padding: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    width: '100%',
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  cardContent: {
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  infoText: {
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  infoValue: {
-    marginLeft: 'auto',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 8,
-    marginRight: 8,
-  },
-  button: {
-    backgroundColor: '#007BFF',
-    borderRadius: 4,
-    padding: 8,
-  },
-  secondaryButton: {
-    backgroundColor: '#28a745', // Green color for trade buttons
-    borderRadius: 4,
-    padding: 8,
-    marginVertical: 8,
-    alignSelf: 'center',
-    minWidth: '45%',
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  logContainer: {
-    maxHeight: 100,
-    padding: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-  },
-  leaveButton: {
-    backgroundColor: '#DC3545',
-    borderRadius: 4,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  leaveButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  buttonRow: { // update!
-    flexDirection: 'row', // update!
-    justifyContent: 'space-between', // update!
-  }, // update!
-});
