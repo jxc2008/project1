@@ -380,6 +380,62 @@ def handle_start_game(data):
         "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
     }, room=room_id)
     
+@socketio.on('start_round')
+def start_round(data):
+    room_id = data.get('roomId')
+    print(f"Starting new round for room: {room_id}")
+
+    # Retrieve the current game state from the database
+    room_doc = rooms_collection.find_one({"_id": ObjectId(room_id)})
+    if not room_doc:
+        print("Room not found.")
+        return
+
+    # Deserialize game state
+    game = deserialize_game(room_doc.get("game", {}))
+    
+    # Start a new round: increments round number, assigns new roles, resets round-specific data
+    game.start_new_round()
+
+    # Persist the updated game state back to the database
+    rooms_collection.update_one(
+        {"_id": ObjectId(room_id)},
+        {"$set": {"game": serialize_game(game)}}
+    )
+
+    # Serialize updated game state to send to clients
+    game_data = serialize_game(game)
+
+    # Emit the 'start_round' event to all clients in the room with updated game data
+    socketio.emit('start_round', {
+        "roomId": room_id,
+        "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
+    }, room=room_id)
+
+@socketio.on('start_round')
+def start_round_event(data):
+    room_id = data.get('roomId')
+    print(f"Starting new round for room: {room_id}")
+
+    room_doc = rooms_collection.find_one({"_id": ObjectId(room_id)})
+    if not room_doc:
+        print("Room not found.")
+        return
+
+    game = deserialize_game(room_doc.get("game", {}))
+    game.start_new_round()  # Use the revised method to force a new round
+
+    rooms_collection.update_one(
+        {"_id": ObjectId(room_id)},
+        {"$set": {"game": serialize_game(game)}}
+    )
+
+    game_data = serialize_game(game)
+    socketio.emit('start_round', {
+        "roomId": room_id,
+        "gameData": json.dumps(game_data)
+    }, room=room_id)
+    
 @socketio.on('make_market')
 def handle_make_market(data):
     room_id = data.get("roomId")

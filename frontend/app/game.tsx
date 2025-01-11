@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   secondaryButton: {
-    backgroundColor: '#28a745', // Green color for trade buttons
+    backgroundColor: '#28a745',
     borderRadius: 4,
     padding: 8,
     marginVertical: 8,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Gray out background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   endModalContent: {
     backgroundColor: 'white',
@@ -185,6 +185,9 @@ export default function GamePage() {
     hitPlayer: null,
     liftPlayer: null,
   });
+  const [newRoundPopup, setNewRoundPopup] = useState(false);
+
+  const [renderRound, setRenderRound] = useState(0); 
 
   const { roomId, username, gameData } = useLocalSearchParams();
 
@@ -383,40 +386,120 @@ export default function GamePage() {
   
 
   useEffect(() => {
-  const socket = getSocket();
+    const socket = getSocket();
 
-  socket.on("market_update", (data) => {
-    if (data.action === "hit") {
-      setGameLog((prevLog) => [
-        ...prevLog,
-        `${data.playerName} has hit the bid! Sold to ${data.bidPlayer} for $${data.price}.`, // Update!
-      ]);
-      setCurrentBid(0); // Reset the bid
-    } else if (data.action === "lift") {
-      setGameLog((prevLog) => [
-        ...prevLog,
-        `${data.playerName} has lifted the ask! Bought from ${data.askPlayer} for $${data.price}.`, // Update!
-      ]);
-      setCurrentAsk(21); // Reset the ask
-    } else if (data.action === "ask") {
-      setCurrentAsk(data.currentAsk);
-      setGameLog((prevLog) => [...prevLog, data.logMessage]);
-    } else if (data.action === "bid") {
-      setCurrentBid(data.currentBid);
-      setGameLog((prevLog) => [...prevLog, data.logMessage]);
-    }
-  });
+    socket.on("market_update", (data) => {
+      if (data.action === "hit") {
+        setGameLog((prevLog) => [
+          ...prevLog,
+          `${data.playerName} has hit the bid! Sold to ${data.bidPlayer} for $${data.price}.`, // Update!
+        ]);
+        setCurrentBid(0); // Reset the bid
+      } else if (data.action === "lift") {
+        setGameLog((prevLog) => [
+          ...prevLog,
+          `${data.playerName} has lifted the ask! Bought from ${data.askPlayer} for $${data.price}.`, // Update!
+        ]);
+        setCurrentAsk(21); // Reset the ask
+      } else if (data.action === "ask") {
+        setCurrentAsk(data.currentAsk);
+        setGameLog((prevLog) => [...prevLog, data.logMessage]);
+      } else if (data.action === "bid") {
+        setCurrentBid(data.currentBid);
+        setGameLog((prevLog) => [...prevLog, data.logMessage]);
+      }
+    });
 
-  return () => {
-    socket.off("market_update");
-  };
-}, []);
+    return () => {
+      socket.off("market_update");
+    };
+  }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+  
+    socket.on('start_round', (data) => {
+      try {
+        const parsedData = JSON.parse(data.gameData);
+  
+        // Update the state with the new round data
+        setCurrentRound(parsedData.current_round);
+        setHost(parsedData.host);
+        setPlayerCount(parsedData.player_count);
+        setDices(parsedData.dices);
+        setCoin(parsedData.coin);
+        setMarketActive(parsedData.market_active);
+        setRoundActive(parsedData.round_active);
+        setFairValue(parsedData.fair_value);
+        setPlayers(parsedData.players || []);
+  
+        // Recalculate player's role and trading information
+        const currentPlayer = (parsedData.players || []).find((p) => p.username === username);
+        if (currentPlayer) {
+          if (currentPlayer.contract && currentPlayer.contract.type_of_action) {
+            setPlayerInfo({ contract: currentPlayer.contract, diceRoll: undefined, coinFlip: undefined });
+            setPlayerRole('contractor');
+          } else {
+            const hasDiceRoll = currentPlayer.record.some(record => record[0] === 'dice_roll');
+            const diceRoll = hasDiceRoll ? currentPlayer.record.find(record => record[0] === 'dice_roll')[1] : undefined;
+  
+            setPlayerInfo({
+              contract: null,
+              diceRoll: diceRoll,
+              coinFlip: currentPlayer.highLow || parsedData.coin,
+            });
+            setPlayerRole('insider');
+          }
+        } else {
+          console.error('Current player not found in updated players list');
+        }
+  
+        // Reset timer for the new round
+        const newRoundDuration = 10;  // Example duration for debugging
+        setEndTime(Date.now() + newRoundDuration * 1000);
+        setTimeLeft(newRoundDuration);
+  
+        // Show the new round popup
+        setEndRoundPopup(false);
+        setNewRoundPopup(true);
+      } catch (error) {
+        console.error('Failed to parse start_round data:', error);
+      }
+    });
+  
+    return () => {
+      socket.off('start_round');
+    };
+  }, []);
+  
 
   const handleLeaveGame = () => {
     if (window.confirm('Are you sure you want to leave the game?')) {
       console.log('Redirecting to the homepage...');
       const HOMEPAGE_URL = process.env.HOMEPAGE_URL || "http://localhost:8081"; // update!
       window.location.href = HOMEPAGE_URL; // update!
+    }
+  };
+
+  const handleStartNextRound = () => {
+    if (username === host) {
+      setCurrentRound(prev => prev + 1);
+
+      const socket = getSocket();
+      socket.emit('start_round', { roomId });  // Emit event to start a new round
+      setEndRoundPopup(false);
+      const nextRoundDuration = 10; // duration for debugging; adjust as needed for production
+      setEndTime(Date.now() + nextRoundDuration * 1000);
+      setTimeLeft(nextRoundDuration);
+      setCurrentRound((prev) => prev + 1);
+      // Additional reset logic could go here (e.g., resetting bids/asks)
+    }
+  };
+
+  const handleEndGame = () => {
+    if (window.confirm('Are you sure you want to end the game?')) {
+      const HOMEPAGE_URL = process.env.HOMEPAGE_URL || "http://localhost:8081";
+      window.location.href = HOMEPAGE_URL;
     }
   };
 
@@ -563,11 +646,48 @@ export default function GamePage() {
                 <Text style={styles.endModalTitle}>End of Round {currentRound}!</Text>
                 <Text style={styles.endModalMessage}>Fair Value: {fairValue}</Text>
                 <Text style={styles.endModalMessage}>
-                  Total PnL: {/* Insert actual PnL calculation or placeholder */}
+                  Round PnL:
                 </Text>
-                <TouchableOpacity
-                  style={styles.endModalButton}
-                  onPress={() => setEndRoundPopup(false)}
+                {players.map((p, index) => (
+          <Text key={index} style={styles.endModalMessage}>
+            {p.username}: {p.cumulativePnl}
+          </Text>
+        ))}
+        {username === host && (
+          <>
+            <TouchableOpacity style={styles.endModalButton} onPress={handleStartNextRound}>
+              <Text style={styles.endModalButtonText}>Start next round</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.endModalButton} onPress={handleEndGame}>
+              <Text style={styles.endModalButtonText}>End game</Text>
+            </TouchableOpacity>
+            </>
+        )}
+              </View>
+            </View>
+          </Modal>
+        )}
+        {/* New Round Popup */}
+        {newRoundPopup && (
+          <Modal
+            transparent={true}
+            visible={newRoundPopup}
+            animationType="fade"
+            onRequestClose={() => setNewRoundPopup(false)}
+          >
+            <View style={styles.endModalContainer}>
+              <View style={styles.endModalContent}>
+                <Text style={styles.endModalTitle}>Round {currentRound} Started!</Text>
+                <Text style={styles.endModalMessage}>
+                  Your Role: {playerRole === 'contractor' ? 
+                    `${playerInfo.contract?.type_of_action}, ${playerInfo.contract?.number}` : 
+                    playerRole === 'insider' ? 
+                    (playerInfo.diceRoll !== undefined ? `Dice Roll: ${playerInfo.diceRoll}` : `Coin Flip: ${playerInfo.coinFlip}`) : 
+                    'N/A'}
+                </Text>
+                <TouchableOpacity 
+                  style={styles.endModalButton} 
+                  onPress={() => setNewRoundPopup(false)}
                 >
                   <Text style={styles.endModalButtonText}>OK</Text>
                 </TouchableOpacity>
