@@ -75,6 +75,13 @@ class Game:
             # self.prompt_user()
     
     def start_round(self):
+        
+        for player in self.players:
+            player.contract = None
+            player.high_low = None
+            # Optionally reset other per-round attributes if needed
+            player.record = []
+            
         """
         Starts a new round, assigns contracts and high/low player.
         """
@@ -145,6 +152,7 @@ class Game:
         """
         Ends the current round, compares contracts, applies penalties, calculates P/L, and resets necessary variables.
         """
+        
         print("\nYour 5 minutes are up! Ending the current round.")
         print(f"Fair Value for this round: ${self.fair_value}")
 
@@ -152,48 +160,9 @@ class Game:
             total_pl = 0
             print(f"\nProcessing player: {player.name}")
 
-            # Handle Contract Fulfillment
-            if player.contract and player.contract.type_of_action in ["long", "short"]:
-                action_type = player.contract.type_of_action
-                required_trades = player.contract.number
-                print(f"{player.name} has a {action_type.upper()} contract requiring {required_trades} trades.")
 
-                if action_type == "long":
-                    if player.buy_count >= required_trades:
-                        print(f"{player.name} fulfilled their LONG contract requirement! ✅")
-                    else:
-                        print(f"{player.name} did NOT fulfill their LONG contract requirement. ❌ Cumulative P/L decreased by $100.")
-                        player.cumulative_pnl -= 100
-
-                elif action_type == "short":
-                    if player.sell_count >= required_trades:
-                        print(f"{player.name} fulfilled their SHORT contract requirement! ✅")
-                    else:
-                        print(f"{player.name} did NOT fulfill their SHORT contract requirement. ❌ Cumulative P/L decreased by $100.")
-                        player.cumulative_pnl -= 100
-
-            # Calculate Profit/Loss based on Actions
-            for action_entry in player.record:
-                # Each action_entry is expected to be a list: [action, price]
-                if not isinstance(action_entry, list) or len(action_entry) != 2:
-                    print(f"Invalid action entry for player {player.name}: {action_entry}")
-                    continue
-
-                action, price = action_entry
-                action = action.lower()
-
-                if action == "long":
-                    pl = self.fair_value - price
-                    print(f"Player {player.name} LONG at ${price}: P/L = ${self.fair_value} - ${price} = ${pl}")
-                elif action == "short":
-                    pl = price - self.fair_value
-                    print(f"Player {player.name} SHORT at ${price}: P/L = ${price} - ${self.fair_value} = ${pl}")
-                else:
-                    continue
-
-                total_pl += pl
-
-            # Update Player's cumulative_pnl
+            # Store round P/L and update cumulative P/L
+            player.round_pnl = total_pl      # <-- Store round P/L here
             player.cumulative_pnl += total_pl
             print(f"Player {player.name} total P/L for this round: ${total_pl}")
             print(f"Player {player.name} new cumulative P/L: ${player.cumulative_pnl}")
@@ -216,18 +185,6 @@ class Game:
 
         print("\n--- Round Ended Successfully ---\n")
         print("Would you like to play another round? (yes to continue)")
-        inp = input()
-        if inp == "yes":
-            self.start_game()
-        else:
-            print("\n--- Game Over ---")
-            print("\nFinal Cumulative P/L for All Players:")
-            for player in self.players:
-                print(f"{player.name}: ${player.cumulative_pnl}")
-
-            winner = max(self.players, key=lambda p: p.cumulative_pnl)
-            print(f"\n🏆 The winner is {winner.name} with a cumulative P/L of ${winner.cumulative_pnl}!")
-            return
 
 
 
@@ -411,6 +368,7 @@ class Player:
         self.sell_count = 0
         self.record = [] #list of action objects
         self.cumulative_pnl = 0
+        self.round_pnl = 0
         self.status = None
         self.last_active = last_active or datetime.datetime.now()
         

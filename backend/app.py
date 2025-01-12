@@ -43,6 +43,7 @@ def serialize_game(game):
                 "sell_count": player.sell_count,
                 "record": player.record,
                 "cumulative_pnl": player.cumulative_pnl,
+                "round_pnl": player.round_pnl,  
             }
             for player in game.players
         ],
@@ -83,6 +84,7 @@ def deserialize_game(game_data):
         player.sell_count = player_data.get("sell_count", 0)
         player.record = player_data.get("record", [])
         player.cumulative_pnl = player_data.get("cumulative_pnl", 0)
+        player.round_pnl = player_data.get("round_pnl", 0)
 
         # Restore contract
         contract_data = player_data.get("contract")
@@ -380,37 +382,6 @@ def handle_start_game(data):
         "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
     }, room=room_id)
     
-@socketio.on('start_round')
-def start_round(data):
-    room_id = data.get('roomId')
-    print(f"Starting new round for room: {room_id}")
-
-    # Retrieve the current game state from the database
-    room_doc = rooms_collection.find_one({"_id": ObjectId(room_id)})
-    if not room_doc:
-        print("Room not found.")
-        return
-
-    # Deserialize game state
-    game = deserialize_game(room_doc.get("game", {}))
-    
-    # Start a new round: increments round number, assigns new roles, resets round-specific data
-    game.start_new_round()
-
-    # Persist the updated game state back to the database
-    rooms_collection.update_one(
-        {"_id": ObjectId(room_id)},
-        {"$set": {"game": serialize_game(game)}}
-    )
-
-    # Serialize updated game state to send to clients
-    game_data = serialize_game(game)
-
-    # Emit the 'start_round' event to all clients in the room with updated game data
-    socketio.emit('start_round', {
-        "roomId": room_id,
-        "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
-    }, room=room_id)
 
 @socketio.on('start_round')
 def start_round_event(data):

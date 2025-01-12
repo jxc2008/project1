@@ -222,7 +222,8 @@ export default function GamePage() {
         buyCount: player.buy_count,
         sellCount: player.sell_count,
         record: player.record,
-        cumulativePnl: player.cumulative_pnl
+        cumulativePnl: player.cumulative_pnl,
+        roundPnl: player.round_pnl,
       }));
       
       setPlayers(playersData);
@@ -650,7 +651,7 @@ export default function GamePage() {
                 </Text>
                 {players.map((p, index) => (
           <Text key={index} style={styles.endModalMessage}>
-            {p.username}: {p.cumulativePnl}
+            {p.username}: {p.roundPnl}
           </Text>
         ))}
         {username === host && (
