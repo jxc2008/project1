@@ -17,8 +17,6 @@ CORS(app, origins=["*"])
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    logger=True,
-    engineio_logger=True,
     ping_timeout=60,
     ping_interval=25,
     transports=['websocket']
@@ -524,6 +522,32 @@ def handle_place_ask(data):
     }, room=room_id)
 
     print(f"Player {username} placed an ask of ${value}.")
+    
+@socketio.on('end_round')
+def handle_end_round(data):
+    room_id = data.get('roomId')
+    print("Ending round for room:", room_id)
+    
+    # Retrieve the room document from the database
+    room_doc = rooms_collection.find_one({"_id": ObjectId(room_id)})
+    if not room_doc:
+        print("Room not found for end_round")
+        return
+    
+    # Deserialize game state, end the round, and update the room data
+    game = deserialize_game(room_doc.get("game", {}))
+    game.end_round()  # Call the end_round method from game_logic
+    rooms_collection.update_one(
+        {"_id": ObjectId(room_id)},
+        {"$set": {"game": serialize_game(game)}}
+    )
+    
+    # update! Emit an 'end_round' event with updated game data to all clients in the room
+    socketio.emit('end_round', {
+        "roomId": room_id,
+        "gameData": json.dumps(serialize_game(game))
+    }, room=room_id)
+
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

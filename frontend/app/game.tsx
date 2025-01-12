@@ -4,7 +4,6 @@ import { MaterialIcons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { getSocket } from '../utils/socket';
-
 import PlayerInfoPopup, { PlayerRole } from './components/PlayerInfoPopup';
 
 const styles = StyleSheet.create({
@@ -467,11 +466,46 @@ export default function GamePage() {
         console.error('Failed to parse start_round data:', error);
       }
     });
-  
+
     return () => {
       socket.off('start_round');
     };
   }, []);
+
+  useEffect(() => {
+      const socket = getSocket();
+      //receive end round data
+      socket.on('end_round', (data) => {
+        try {
+          const parsedData = JSON.parse(data.gameData);
+          
+          //for each player in players log their round pnl in the console
+          parsedData.players.forEach((player) => {
+            console.log(player.username, player.roundPnl);
+          });
+
+
+          setPlayers(parsedData.players);
+
+
+        } catch (error) {
+          console.error('Failed to parse end_round data:', error);
+        }
+      });
+  });
+
+   // update!
+  
+  // update! Modified useEffect to call endRound when timer reaches 0
+  useEffect(() => { // update!
+    const socket = getSocket();
+    if (timeLeft === 0) { // update!
+      
+      socket.emit('end_round', { roomId });              // update!
+      setEndRoundPopup(true);  // update!
+    } // update!
+  }, [timeLeft]); // update!
+  
   
 
   const handleLeaveGame = () => {
@@ -484,7 +518,6 @@ export default function GamePage() {
 
   const handleStartNextRound = () => {
     if (username === host) {
-      setCurrentRound(prev => prev + 1);
 
       const socket = getSocket();
       socket.emit('start_round', { roomId });  // Emit event to start a new round
@@ -492,8 +525,9 @@ export default function GamePage() {
       const nextRoundDuration = 10; // duration for debugging; adjust as needed for production
       setEndTime(Date.now() + nextRoundDuration * 1000);
       setTimeLeft(nextRoundDuration);
-      setCurrentRound((prev) => prev + 1);
       // Additional reset logic could go here (e.g., resetting bids/asks)
+      setCurrentAsk(21);
+      setCurrentBid(0);
     }
   };
 
@@ -617,7 +651,34 @@ export default function GamePage() {
               </View>
             </View>
           </View>
-  
+          {(() => {
+            const sortedPlayers = [...players].sort((a, b) => (b.cumulativePnl || 0) - (a.cumulativePnl || 0));
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Leaderboard</Text>
+                <View style={styles.cardContent}>
+                  {sortedPlayers.map((player, index) => (
+                    <View key={index} style={styles.infoRow}>
+                      <FontAwesome5 name="user" size={20} color="black" />
+                      <Text style={styles.infoText}>{player.username}:</Text>
+                      <Text style={styles.infoValue}>${player.cumulativePnl}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          })()}
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Game Log</Text>
+            <View style={styles.cardContent}>
+              <ScrollView style={styles.logContainer} ref={scrollRef}>
+                {gameLog.map((log, index) => (
+                  <Text key={index}>{log}</Text>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Game Log</Text>
             <View style={styles.cardContent}>
