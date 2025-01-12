@@ -189,6 +189,7 @@ export default function GamePage() {
   const [renderRound, setRenderRound] = useState(0); 
 
   const { roomId, username, gameData } = useLocalSearchParams();
+  
 
   useEffect(() => {
     if (!gameData) {
