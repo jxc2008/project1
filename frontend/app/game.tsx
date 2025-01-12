@@ -377,12 +377,6 @@ export default function GamePage() {
       alert("No valid ask to lift.");
     }
   };
-
-  useEffect(() => {
-    if (timeLeft === 0) {
-      setEndRoundPopup(true);
-    }
-  }, [timeLeft]);
   
 
   useEffect(() => {
@@ -499,7 +493,7 @@ export default function GamePage() {
   // update! Modified useEffect to call endRound when timer reaches 0
   useEffect(() => { // update!
     const socket = getSocket();
-    if (timeLeft === 0) { // update!
+    if (timeLeft === 0 && username === host ) { // update!
       
       socket.emit('end_round', { roomId });              // update!
       setEndRoundPopup(true);  // update!
