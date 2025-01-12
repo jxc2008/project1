@@ -410,6 +410,7 @@ export default function GamePage() {
     };
   }, []);
 
+  const [startRoundPopup, setStartRoundPopup] = useState(false);
   useEffect(() => {
     const socket = getSocket();
   
@@ -448,7 +449,8 @@ export default function GamePage() {
         } else {
           console.error('Current player not found in updated players list');
         }
-  
+        
+        setStartRoundPopup(true);
         // Reset timer for the new round
         const newRoundDuration = 10;  // Example duration for debugging
         setEndTime(Date.now() + newRoundDuration * 1000);
@@ -482,7 +484,7 @@ export default function GamePage() {
 
           setPlayers(parsedData.players);
 
-
+          
         } catch (error) {
           console.error('Failed to parse end_round data:', error);
         }
@@ -674,17 +676,6 @@ export default function GamePage() {
               </ScrollView>
             </View>
           </View>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Game Log</Text>
-            <View style={styles.cardContent}>
-              <ScrollView style={styles.logContainer} ref={scrollRef}>
-                {gameLog.map((log, index) => (
-                  <Text key={index}>{log}</Text>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-  
           <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveGame}>
             <Text style={styles.leaveButtonText}>Leave Game</Text>
           </TouchableOpacity>

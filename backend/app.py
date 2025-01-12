@@ -542,11 +542,12 @@ def handle_end_round(data):
         {"$set": {"game": serialize_game(game)}}
     )
     
-    # update! Emit an 'end_round' event with updated game data to all clients in the room
+    # Emit the end_round event to all players in the room
+    game_data = serialize_game(game)
     socketio.emit('end_round', {
         "roomId": room_id,
-        "gameData": json.dumps(serialize_game(game))
-    }, room=room_id)
+        "gameData": json.dumps(game_data)
+    }, room=room_id)  # update! Emit to all players in the room
 
 
 if __name__ == '__main__':
