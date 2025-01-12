@@ -474,4 +474,21 @@ export const gameListStyles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+  refreshButton: {
+    backgroundColor: '#3498db',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  refreshButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  countdownText: {
+    fontSize: 14,
+    color: '#fff',
+    marginLeft: 10,
+  },
 });

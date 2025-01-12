@@ -18,12 +18,30 @@ export default function GameList() {
   const [handleNotSet, setHandleNotSet] = useState('');
   const [roomIsFull, setRoomIsFull] = useState('');
   const [handleTaken, setHandleTaken] = useState('');
+  const [countdown, setCountdown] = useState(5); // Countdown state
+
   
   const router = useRouter();
 
   useEffect(() => {
     fetchRooms();
   }, []);
+
+  // Auto-refresh interval setup
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          fetchRooms();
+          return 5; // Reset countdown after refresh
+        }
+        return prev - 1;
+      });
+    }, 1000); // Update every second
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
+
 
   const fetchRooms = async () => {
     setIsLoading(true);
@@ -130,6 +148,20 @@ export default function GameList() {
   return (
     <View style={gameListStyles.container}>
       <Text style={gameListStyles.title}>Ongoing Games</Text>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 10 }}>
+        <TouchableOpacity
+          onPress={() => {
+            fetchRooms();
+            setCountdown(5); // Reset countdown on manual refresh
+          }}
+          style={gameListStyles.refreshButton} // Define style as needed
+        >
+          <Text style={gameListStyles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
+        <Text style={gameListStyles.countdownText}>Auto refresh in: {countdown}s</Text>
+      </View>
+
       {isLoading ? (
         <Text style={gameListStyles.loadingText}>Loading rooms...</Text>
       ) : rooms.length === 0 ? (
