@@ -481,7 +481,7 @@ export default function GamePage() {
           
           //for each player in players log their round pnl in the console
           parsedData.players.forEach((player) => {
-            console.log(player.username, player.roundPnl);
+            console.log(player.username, player.round_pnl);
           });
 
 
@@ -652,7 +652,7 @@ export default function GamePage() {
             </View>
           </View>
           {(() => {
-            const sortedPlayers = [...players].sort((a, b) => (b.cumulativePnl || 0) - (a.cumulativePnl || 0));
+            const sortedPlayers = [...players].sort((a, b) => (b.cumulative_pnl || 0) - (a.cumulative_pnl || 0));
             return (
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Leaderboard</Text>
@@ -661,7 +661,7 @@ export default function GamePage() {
                     <View key={index} style={styles.infoRow}>
                       <FontAwesome5 name="user" size={20} color="black" />
                       <Text style={styles.infoText}>{player.username}:</Text>
-                      <Text style={styles.infoValue}>${player.cumulativePnl}</Text>
+                      <Text style={styles.infoValue}>${player.cumulative_pnl}</Text>
                     </View>
                   ))}
                 </View>
@@ -712,7 +712,7 @@ export default function GamePage() {
                 </Text>
                 {players.map((p, index) => (
           <Text key={index} style={styles.endModalMessage}>
-            {p.username}: {p.roundPnl}
+            {p.username}: {p.round_pnl}
           </Text>
         ))}
         {username === host && (
