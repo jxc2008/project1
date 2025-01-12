@@ -98,6 +98,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     const socket = getSocket();
     console.log('Starting game...');
     socket.emit('start_game', { roomId });
+    socket.emit('start_round', { roomId });
   };
 
   return (
