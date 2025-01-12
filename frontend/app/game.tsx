@@ -548,7 +548,6 @@ export default function GamePage() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <PlayerInfoPopup role={playerRole} info={playerInfo} />
           <Text style={styles.title}>Gem Trading Game</Text>
   
           <View style={styles.gridContainer}>
