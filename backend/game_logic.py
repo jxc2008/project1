@@ -136,6 +136,10 @@ class Game:
     #function will receive action and player name and it will print it
     #def tracker(self, player_name, player_action_count):
         #print("Player " + player + "has " + action)
+    def start_new_round(self):
+        # Start a new round without user prompt, incrementing round and resetting roles/contracts
+        self.round_active = False
+        self.start_game()
     
     def end_round(self):
         """
