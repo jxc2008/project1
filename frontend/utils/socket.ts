@@ -5,7 +5,7 @@ let socket: any = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io('ws://192.168.10.66:5000', {
+    socket = io('ws://10.180.114.140:5000', {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
