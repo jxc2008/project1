@@ -483,6 +483,7 @@ export default function GamePage() {
 
 
           setPlayers(parsedData.players);
+          setEndRoundPopup(true); 
 
           
         } catch (error) {
@@ -499,7 +500,6 @@ export default function GamePage() {
     if (timeLeft === 0 && username === host ) { // update!
       
       socket.emit('end_round', { roomId });              // update!
-      setEndRoundPopup(true);  // update!
     } // update!
   }, [timeLeft]); // update!
   
