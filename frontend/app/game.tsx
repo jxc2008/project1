@@ -268,17 +268,61 @@ export default function GamePage() {
 
   useEffect(() => {
     const socket = getSocket();
-
+  
     socket.on('player_left', (data) => {
       console.log(`${data.username} has left the game.`);
       setGameLog((prevLog) => [
         ...prevLog,
         `${data.username} has left the game.`,
       ]);
+  
+      // Update the players list by removing the player who left
+      const updatedPlayers = players.filter(player => player.username !== data.username);
+      setPlayers(updatedPlayers);
+  
+      // Check if the leaving player is the host
+      if (data.username === host) {
+        // Update the host to the new host (if provided in the event)
+        if (data.newHost) {
+          setHost(data.newHost);
+          setGameLog((prevLog) => [
+            ...prevLog,
+            `${data.newHost} is now the new host.`,
+          ]);
+        } else if (updatedPlayers.length < 4) {
+          // If no new host is provided, end the game
+          setGameLog((prevLog) => [
+            ...prevLog,
+            `No new host assigned. Ending the game.`,
+          ]);
+          handleEndGame();
+        }
+      }
+  
+      // Check if the number of players is less than 4
+      if (updatedPlayers.length < 4 && data.username == host) {
+        setGameLog((prevLog) => [
+          ...prevLog,
+          `Not enough players to continue the game. Ending the game.`,
+        ]);
+        handleEndGame(); // End the game if there are fewer than 4 players
+      }
     });
-
+  
     return () => {
       socket.off('player_left');
+    };
+  }, [host, players]);
+  
+  useEffect(() => {
+    const socket = getSocket();
+  
+    socket.on('update_host', (data) => {
+      setHost(data.newHost);
+    });
+  
+    return () => {
+      socket.off('update_host');
     };
   }, []);
 
@@ -410,6 +454,22 @@ export default function GamePage() {
     };
   }, []);
 
+  useEffect(() => {
+    const socket = getSocket();
+  
+    // Listen for the game_ended event
+    socket.on('game_ended', (data) => {
+      //alert(data.message); // Notify the player that the game has ended
+      const HOMEPAGE_URL = process.env.HOMEPAGE_URL || "http://localhost:8081";
+      window.location.href = HOMEPAGE_URL; // Redirect to the homepage
+    });
+  
+    // Clean up the event listener when the component unmounts
+    return () => {
+      socket.off('game_ended');
+    };
+  }, []);
+
   const [startRoundPopup, setStartRoundPopup] = useState(false);
   useEffect(() => {
     const socket = getSocket();
@@ -529,10 +589,11 @@ export default function GamePage() {
   };
 
   const handleEndGame = () => {
-    if (window.confirm('Are you sure you want to end the game?')) {
-      const HOMEPAGE_URL = process.env.HOMEPAGE_URL || "http://localhost:8081";
-      window.location.href = HOMEPAGE_URL;
-    }
+    const socket = getSocket();
+    socket.emit('end_game', { roomId }); // Notify the server to end the game
+    //alert('The game has ended because there are not enough players.');
+    const HOMEPAGE_URL = process.env.HOMEPAGE_URL || "http://localhost:8081";
+    window.location.href = HOMEPAGE_URL; // Redirect to the homepage
   };
 
   if (loading) {

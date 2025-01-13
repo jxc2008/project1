@@ -317,30 +317,50 @@ def player_disconnect():
         
         game = deserialize_game(room.get("game", {}))
 
+        # Remove the player who left
         game.players = [player for player in game.players if player.name != username]
         game.player_count = len(game.players)
 
+        # Check if the leaving player is the host
+        if username == game.get_host():
+            # Transfer host to the first player who joined after the host (or any active player)
+            new_host = None
+            if game.players:
+                new_host = game.players[0].name  # Assign host to the first player in the list
+                game.set_host(new_host)
 
-        if game.player_count == 0:
-            # Delete room if no players remain
-            rooms_collection.delete_one({"_id": ObjectId(room_id)})
-            return jsonify({"message": "Player removed and room deleted"}), 200
-        else:
-            # Update room with new game state if players remain
-            rooms_collection.update_one(
-                {"_id": ObjectId(room_id)},
-                {"$set": {"game": serialize_game(game)}}
-            )
+                # Notify all players about the new host
+                socketio.emit('update_host', {
+                    "roomId": str(room["_id"]),
+                    "newHost": new_host
+                }, room=str(room["_id"]))
 
-            # Notify all clients in the room about the player leaving
-            socketio.emit('player_left', {
-                "roomId": str(room["_id"]),
-                "username": username,
-                "num_players": game.player_count
-            }, room=str(room["_id"]))
+                # Log the new host in the game log
+                socketio.emit('player_left', {
+                    "roomId": str(room["_id"]),
+                    "username": username,
+                    "num_players": game.player_count,
+                    "newHost": new_host  
+                }, room=str(room["_id"]))
+            else:
+                # If no players are left, delete the room
+                rooms_collection.delete_one({"_id": ObjectId(room_id)})
+                return jsonify({"message": "Room deleted because no players are left"}), 200
 
-            return jsonify({"message": "Player removed"}), 200
-            
+        # Update the room with the new game state
+        rooms_collection.update_one(
+            {"_id": ObjectId(room_id)},
+            {"$set": {"game": serialize_game(game)}}
+        )
+
+        # Notify all clients in the room about the player leaving
+        socketio.emit('player_left', {
+            "roomId": str(room["_id"]),
+            "username": username,
+            "num_players": game.player_count
+        }, room=str(room["_id"]))
+
+        return jsonify({"message": "Player removed"}), 200
             
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -549,6 +569,19 @@ def handle_end_round(data):
         "gameData": json.dumps(game_data)
     }, room=room_id)  # update! Emit to all players in the room
 
+@socketio.on('end_game')
+def handle_end_game(data):
+    room_id = data.get('roomId')
+    message = data.get('message', 'The game has ended.')
+
+    # Notify all players in the room that the game has ended
+    socketio.emit('game_ended', {
+        "roomId": room_id,
+        "message": message
+    }, room=room_id)
+
+    # Optionally, you can delete the room from the database here
+    rooms_collection.delete_one({"_id": ObjectId(room_id)})
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
