@@ -107,7 +107,7 @@ export default function DramaticRules() {
       {/* Hero Section */}
       <View style={styles.heroSection}>
         <Text style={styles.heroTitle}>
-          HI-LO Stock Trading Game
+          HI-LO Stock Market Game
         </Text>
         <Text style={styles.heroSubtitle}>
           Where fortunes are won or lost on the flip of a coin.

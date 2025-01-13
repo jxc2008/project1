@@ -29,7 +29,7 @@ export default function Index() {
 
   return (
     <View style={globalStyles.container}>
-      <Text style={globalStyles.title}>Quant Trading Card Game</Text>
+      <Text style={globalStyles.title}>Hi Lo Stock Market Game</Text>
 
       {/* Game List Component Placeholder */}
       <View style = {globalStyles.gameList}>
