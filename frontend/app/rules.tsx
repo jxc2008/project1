@@ -1,100 +1,375 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Animated,
+  Easing,
+  StyleSheet,
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from 'react-native';
 import { Link } from 'expo-router';
 
-import { rulesStyles } from '../styles/global';
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <View style={rulesStyles.sectionContainer}>
-        <Text style={rulesStyles.sectionTitle}>{title}</Text>
-        <View style={rulesStyles.sectionContent}>{children}</View>
-    </View>
-);
+// FadeInOnScroll component remains exactly the same
+const FadeInOnScroll: React.FC<{
+  children: React.ReactNode;
+  scrollY: Animated.Value;
+}> = ({ children, scrollY }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const viewRef = useRef<View>(null);
+  const [viewTop, setViewTop] = useState<number | null>(null);
 
-const ListItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <View style={rulesStyles.listItemContainer}>
-        <Text style={rulesStyles.listItemBullet}>•</Text>
-        <Text style={rulesStyles.listItemText}>{children}</Text>
-    </View>
-);
+  useEffect(() => {
+    const listenerId = scrollY.addListener(({ value }) => {
+      if (viewTop !== null) {
+        const fadeStartThreshold = SCREEN_HEIGHT - 100;
+        if (value + fadeStartThreshold >= viewTop) {
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }).start();
+        }
+      }
+    });
 
-export default function Rules() {
-    return (
-        <ScrollView style={rulesStyles.container} contentContainerStyle={rulesStyles.contentContainer}>
-            <Text style={rulesStyles.title}>🎲 HI-LO Game Rules 🎲</Text>
+    return () => {
+      scrollY.removeListener(listenerId);
+    };
+  }, [scrollY, fadeAnim, viewTop]);
 
-            <Section title="📌 Overview">
-                <ListItem>Players: 4–10</ListItem>
-                <ListItem>Round Duration: 5 minutes per round</ListItem>
-                <ListItem>Objective: End each round with the highest monetary profit.</ListItem>
-            </Section>
+  return (
+    <Animated.View
+      ref={viewRef}
+      style={{ opacity: fadeAnim }}
+      onLayout={e => {
+        const layout = e.nativeEvent.layout;
+        setViewTop(layout.y);
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+};
 
-            <Section title="🛠️ How the Game Works">
-                <Text style={rulesStyles.description}>
-                    You will trade an imaginary object with an unknown fair value.
-                </Text>
-                <Text style={rulesStyles.subTitle}>Fair Value is determined by:</Text>
-                <ListItem>Two rolls of a 20-sided die (or three rolls with 8+ players)</ListItem>
-                <ListItem>
-                    One coin flip:{'\n'}
-                    - Heads (HI): Fair value = Highest roll{'\n'}
-                    - Tails (LO): Fair value = Lowest roll
-                </ListItem>
-                <Text style={rulesStyles.subTitle}>8+ Players Special Rule:</Text>
-                <ListItem>Roll three dice instead of two.</ListItem>
-                <ListItem>Coin flip determines if fair value is the highest or lowest of the three rolls.</ListItem>
-            </Section>
+// ScrollDownIndicator component remains exactly the same
+const ScrollDownIndicator: React.FC = () => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
-            <Section title="🧠 Player Information">
-                <Text style={rulesStyles.description}>At the start of the round:</Text>
-                <ListItem>Three players receive hidden information:</ListItem>
-                <ListItem>1. Value of the 1st die roll</ListItem>
-                <ListItem>2. Value of the 2nd die roll</ListItem>
-                <ListItem>3. Coin flip result (HI/LO)</ListItem>
-                <ListItem>
-                    Remaining players receive a Trading Contract:{'\n'}
-                    - Example: [Long, 4] → Player must buy the object at least 4 times.
-                </ListItem>
-                <ListItem>Failure to fulfill the contract: Automatic $100 net loss!</ListItem>
-            </Section>
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [bounceAnim]);
 
-            <Section title="💼 Trading Mechanics">
-                <Text style={rulesStyles.subTitle}>Key Terms:</Text>
-                <ListItem>Bid: Highest price a player is willing to buy.</ListItem>
-                <ListItem>Ask: Lowest price a player is willing to sell.</ListItem>
-                <Text style={rulesStyles.subTitle}>Posting Bids/Asks:</Text>
-                <ListItem>Bid: Must be higher than the current bid.</ListItem>
-                <ListItem>Ask: Must be lower than the current ask.</ListItem>
-                <ListItem>Trades are simultaneous, so be quick!</ListItem>
-                <Text style={rulesStyles.subTitle}>Example Trading Interaction:</Text>
-                <ListItem>Current Bid-Ask Values:</ListItem>
-                <ListItem>- Bid: 7</ListItem>
-                <ListItem>- Ask: 14</ListItem>
-                <ListItem>Player 1: "Bid 8" → Raises the bid.</ListItem>
-                <ListItem>Player 4: "Ask 19" → Sets an asking price.</ListItem>
-                <ListItem>Player 1: "Lift the Ask!" → Buys the object from Player 4 at $19.</ListItem>
-            </Section>
+  const translateY = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -10],
+  });
 
-            <Section title="📊 End of Round">
-                <ListItem>The fair value of the object is revealed.</ListItem>
-                <ListItem>Each player's net profit/loss is calculated.</ListItem>
-                <Text style={rulesStyles.subTitle}>Profit Example:</Text>
-                <ListItem>Fair Value: 15</ListItem>
-                <ListItem>Player 1:</ListItem>
-                <ListItem>- Long 2 units at $16</ListItem>
-                <ListItem>- Short 1 unit at $18</ListItem>
-                <ListItem>Net Profit: +$1</ListItem>
-            </Section>
+  return (
+    <Animated.View style={{ transform: [{ translateY }] }}>
+      <Text style={styles.scrollArrow}>▼</Text>
+    </Animated.View>
+  );
+};
 
-            <Section title="🏆 Winning the Game">
-                <ListItem>Multiple Rounds: Total net profit/loss is tracked cumulatively.</ListItem>
-                <ListItem>Final Winner: The player with the highest cumulative profit after all rounds is declared the overall winner.</ListItem>
-                <Text style={rulesStyles.description}>🎯 Good luck, happy trading, and may your profits soar! 🚀</Text>
-            </Section>
+export default function DramaticRules() {
+  const scrollY = useRef(new Animated.Value(0)).current;
 
-            <Link href="/" style={rulesStyles.linkButton}>
-                <Text style={rulesStyles.linkText}>Back to Home</Text>
-            </Link>
-        </ScrollView>
-    );
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollY.setValue(e.nativeEvent.contentOffset.y);
+  };
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContentContainer}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+    >
+      {/* Hero Section */}
+      <View style={styles.heroSection}>
+        <Text style={styles.heroTitle}>
+          HI-LO Stock Trading Game
+        </Text>
+        <Text style={styles.heroSubtitle}>
+          Where fortunes are won or lost on the flip of a coin.
+        </Text>
+        <ScrollDownIndicator />
+      </View>
+
+      <View style={styles.contentContainer}>
+        {/* Overview */}
+        <FadeInOnScroll scrollY={scrollY}>
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionIcon}>
+              <Text style={styles.iconText}>📌</Text>
+            </View>
+            <Text style={styles.sectionTitle}>Overview</Text>
+            <Text style={styles.description}>
+              Each round is fast-paced and tactical, lasting exactly five minutes. Trade wisely using your insider knowledge or fulfill mandatory trading contracts to avoid penalties.
+            </Text>
+            <View style={styles.statsContainer}>
+              <View style={styles.stat}>
+                <Text style={styles.statLabel}>Players</Text>
+                <Text style={styles.statValue}>4–10</Text>
+              </View>
+              <View style={styles.stat}>
+                <Text style={styles.statLabel}>Duration</Text>
+                <Text style={styles.statValue}>5 min</Text>
+              </View>
+            </View>
+          </View>
+        </FadeInOnScroll>
+
+        {/* How the Game Works */}
+        <FadeInOnScroll scrollY={scrollY}>
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionIcon}>
+              <Text style={styles.iconText}>🎲</Text>
+            </View>
+            <Text style={styles.sectionTitle}>How the Game Works</Text>
+            <Text style={styles.description}>
+              Trade an asset with an unknown fair value determined by dice rolls and a coin flip.
+            </Text>
+            <View style={styles.exampleContainer}>
+              <Text style={styles.exampleText}>🎯 <Text style={styles.exampleHighlight}>Two 20-sided dice</Text> are rolled (three if 8+ players).</Text>
+              <Text style={styles.exampleText}>🪙 The coin flip then decides if the share price equals the <Text style={styles.exampleHighlight}>highest roll (Heads)</Text> or <Text style={styles.exampleHighlight}>lowest roll (Tails)</Text>.</Text>
+            </View>
+          </View>
+        </FadeInOnScroll>
+
+        {/* Player Information */}
+        <FadeInOnScroll scrollY={scrollY}>
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionIcon}>
+              <Text style={styles.iconText}>🧠</Text>
+            </View>
+            <Text style={styles.sectionTitle}>Insider Information</Text>
+            <Text style={styles.description}>
+              Three players receive vital information:
+            </Text>
+            <View style={styles.exampleContainer}>
+              <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>One player</Text> learns the first die roll.</Text>
+              <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>Another player</Text> learns the second roll.</Text>
+              <Text style={styles.exampleText}>🪙 <Text style={styles.exampleHighlight}>The third player</Text> learns the coin flip result (HI/LO).</Text>
+              <Text style={styles.exampleText}>📜 Other players receive <Text style={styles.exampleHighlight}>Trading Contracts</Text> (e.g., [Long, 4] means buy 4+ units).</Text>
+              <Text style={styles.exampleText}>⚠️ Missing contract requirements costs a <Text style={styles.exampleHighlight}>$100 penalty!</Text></Text>
+            </View>
+          </View>
+        </FadeInOnScroll>
+
+        {/* Trading Mechanics */}
+        <FadeInOnScroll scrollY={scrollY}>
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionIcon}>
+              <Text style={styles.iconText}>💼</Text>
+            </View>
+            <Text style={styles.sectionTitle}>Trading Mechanics</Text>
+            <Text style={styles.description}>
+              The market operates on Bids (highest buy price) and Asks (lowest sell price).
+            </Text>
+            <View style={styles.exampleContainer}>
+              <Text style={styles.exampleText}>⬆️ New bids must exceed the <Text style={styles.exampleHighlight}>current bid</Text>.</Text>
+              <Text style={styles.exampleText}>⬇️ New asks must be below the <Text style={styles.exampleHighlight}>current ask</Text>.</Text>
+              <Text style={styles.exampleText}>🤝 Trades happen instantly when someone <Text style={styles.exampleHighlight}>"lifts" an ask</Text> or <Text style={styles.exampleHighlight}>"hits" a bid</Text>.</Text>
+              <Text style={styles.exampleText}>🔢 Multiple units can be traded at once using <Text style={styles.exampleHighlight}>"Lift 3"</Text> or <Text style={styles.exampleHighlight}>"Hit 2"</Text> commands.</Text>
+            </View>
+          </View>
+        </FadeInOnScroll>
+
+        {/* End of Round */}
+        <FadeInOnScroll scrollY={scrollY}>
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionIcon}>
+              <Text style={styles.iconText}>📊</Text>
+            </View>
+            <Text style={styles.sectionTitle}>End of Round</Text>
+            <Text style={styles.description}>
+              After 5 minutes, trading stops and the fair value is revealed. Your profit/loss is calculated from all your trades.
+            </Text>
+            <View style={styles.exampleContainer}>
+              <Text style={styles.exampleText}>📈 Example: If the fair value is 15, buying 2 units at $13 (+$4) and selling 1 at $17 (+$2) gives you <Text style={styles.exampleHighlight}>$6 total profit</Text>.</Text>
+              <Text style={styles.exampleText}>⚠️ Contract penalties are applied if required.</Text>
+            </View>
+          </View>
+        </FadeInOnScroll>
+
+        {/* Winning the Game */}
+        <FadeInOnScroll scrollY={scrollY}>
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionIcon}>
+              <Text style={styles.iconText}>🏆</Text>
+            </View>
+            <Text style={styles.sectionTitle}>Winning the Game</Text>
+            <Text style={styles.description}>
+              Profits and losses accumulate across multiple rounds. The player with the highest total profit wins!
+            </Text>
+            <View style={styles.exampleContainer}>
+              <Text style={styles.exampleText}>💡 Success requires <Text style={styles.exampleHighlight}>smart trading</Text>, <Text style={styles.exampleHighlight}>effective use of information</Text>, and <Text style={styles.exampleHighlight}>careful management of mandatory orders</Text>.</Text>
+            </View>
+          </View>
+        </FadeInOnScroll>
+
+        {/* Back to Home Link */}
+        <FadeInOnScroll scrollY={scrollY}>
+          <Link href="/" style={styles.linkButton}>
+            <Text style={styles.linkText}>Back to Home</Text>
+          </Link>
+        </FadeInOnScroll>
+      </View>
+    </ScrollView>
+  );
 }
+
+// Updated Styles
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a', // Tailwind slate-900
+  },
+  scrollContentContainer: {
+    paddingBottom: 80,
+  },
+  contentContainer: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 800,
+    paddingHorizontal: 20,
+  },
+  heroSection: {
+    minHeight: SCREEN_HEIGHT * 0.9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  heroTitle: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    fontSize: 20,
+    color: '#cbd5e1',
+    textAlign: 'center',
+    marginBottom: 30,
+    maxWidth: 600,
+  },
+  scrollArrow: {
+    fontSize: 32,
+    color: '#3b82f6',
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  sectionContainer: {
+    marginBottom: 40,
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  sectionIcon: {
+    backgroundColor: '#334155',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconText: {
+    fontSize: 24,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#e2e8f0',
+    marginBottom: 16,
+  },
+  description: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#cbd5e1',
+    marginBottom: 16,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 16,
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    padding: 16,
+  },
+  stat: {
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#94a3b8',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#e2e8f0',
+  },
+  exampleContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#334155',
+    borderRadius: 12,
+  },
+  exampleText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#cbd5e1',
+    marginBottom: 8,
+  },
+  exampleHighlight: {
+    fontWeight: 'bold',
+    color: '#3b82f6',
+  },
+  linkButton: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    alignSelf: 'center',
+    marginTop: 40,
+    marginBottom: 20,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  linkText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});
