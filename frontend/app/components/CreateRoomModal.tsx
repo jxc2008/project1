@@ -24,7 +24,7 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/create-room', {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_API_BASE_URL}/create-room`, {
         room_name: roomName,
         password: isPrivate ? password : null,
         isPrivate,

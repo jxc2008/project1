@@ -71,7 +71,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   useEffect(() => {
     const disconnect = () => {
       navigator.sendBeacon(
-        'http://localhost:5000/disconnect',
+        `${process.env.EXPO_PUBLIC_API_BASE_URL}/disconnect`,
         JSON.stringify({ roomId, username })
       );
     };

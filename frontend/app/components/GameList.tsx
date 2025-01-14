@@ -46,7 +46,7 @@ export default function GameList() {
   const fetchRooms = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/rooms');
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_API_BASE_URL}/rooms`);
       setRooms(response.data);
 
       const roomCodeMap = {};
@@ -86,7 +86,7 @@ export default function GameList() {
     const roomCode = roomCodes[selectedRoom._id];
 
     try {
-      const response = await axios.post('http://localhost:5000/join-room', {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_API_BASE_URL}/join-room`, {
         roomCode,
         username,
         password: selectedRoom.isPrivate ? password : null,

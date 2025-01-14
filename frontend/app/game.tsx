@@ -460,7 +460,7 @@ export default function GamePage() {
     // Listen for the game_ended event
     socket.on('game_ended', (data) => {
       //alert(data.message); // Notify the player that the game has ended
-      const HOMEPAGE_URL = process.env.REACT_APP_HOMEPAGE_URL || 'http://www.hilowtrader.org';
+      const HOMEPAGE_URL = process.env.EXPO_PUBLIC_HOMEPAGE_URL || 'http://www.hilowtrader.org';
       window.location.href = HOMEPAGE_URL; // Redirect to the homepage
     });
   
@@ -568,7 +568,7 @@ export default function GamePage() {
   const handleLeaveGame = () => {
     if (window.confirm('Are you sure you want to leave the game?')) {
       console.log('Redirecting to the homepage...');
-      const HOMEPAGE_URL = process.env.REACT_APP_HOMEPAGE_URL || 'http://www.hilowtrader.org';; // update!
+      const HOMEPAGE_URL = process.env.EXPO_PUBLIC_HOMEPAGE_URL || 'http://www.hilowtrader.org';; // update!
       window.location.href = HOMEPAGE_URL; // update!
     }
   };
@@ -592,7 +592,7 @@ export default function GamePage() {
     const socket = getSocket();
     socket.emit('end_game', { roomId }); // Notify the server to end the game
     //alert('The game has ended because there are not enough players.');
-    const HOMEPAGE_URL = process.env.REACT_APP_HOMEPAGE_URL || 'http://www.hilowtrader.org';;
+    const HOMEPAGE_URL = process.env.EXPO_PUBLIC_HOMEPAGE_URL || 'http://www.hilowtrader.org';;
     window.location.href = HOMEPAGE_URL; // Redirect to the homepage
   };
 

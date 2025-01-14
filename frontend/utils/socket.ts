@@ -1,11 +1,13 @@
 import io from 'socket.io-client';
 
+
 // Create a function to get or initialize the socket
 let socket: any = null;
 
+
 export const getSocket = () => {
   if (!socket) {
-    socket = io('ws://10.0.0.236:5000', {
+    socket = io(process.env.EXPO_PUBLIC_SOCKET_URL, {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
