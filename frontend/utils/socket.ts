@@ -7,7 +7,7 @@ let socket: any = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io(process.env.EXPO_PUBLIC_SOCKET_URL, {
+    socket = io("wss://hi-lo-backend.onrender.com", {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,

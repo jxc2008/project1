@@ -71,7 +71,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   useEffect(() => {
     const disconnect = () => {
       navigator.sendBeacon(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/disconnect`,
+        "https://hi-lo-backend.onrender.com/disconnect",
         JSON.stringify({ roomId, username })
       );
     };
