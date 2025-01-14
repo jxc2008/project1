@@ -110,7 +110,17 @@ export default function DramaticRules() {
           HI-LO Stock Market Game
         </Text>
         <Text style={styles.heroSubtitle}>
-          Where fortunes are won or lost on the flip of a coin.
+          NOTE TO SELF format this introduction as an offer letter. Congratulations! After a rigorous recruiting process, we are excited to extend you a fulltime offer as a Trader at Hi-Lo, LLC. You will start IMMEDIATELY.
+        </Text>
+        <Text style={styles.heroSubtitle}>
+          As part of our company culture, we believe in competition. As such, you will be competing against your fellow coworkers to make the most profit.
+        </Text>
+
+        <Text style={styles.heroSubtitle}>
+          We are Hi-Lo. We aim to be innovative and mysterious.
+        </Text>
+        <Text style={styles.heroSubtitle}>
+          However, since you are our employee, we have revealed our trading strategies to you below.
         </Text>
         <ScrollDownIndicator />
       </View>
@@ -124,7 +134,13 @@ export default function DramaticRules() {
             </View>
             <Text style={styles.sectionTitle}>Overview</Text>
             <Text style={styles.description}>
-              Each round is fast-paced and tactical, lasting exactly five minutes. Trade wisely using your insider knowledge or fulfill mandatory trading contracts to avoid penalties.
+              We are Hi-Lo. We aim to be innovative and mysterious.
+            </Text>
+            <Text style={styles.description}>
+              Every 5 minutes, we will pay or deduct your earnings based on how well you traded our stock.
+            </Text>
+            <Text style={styles.description}>
+              With seemingly impossible, proprietary algorithms, we generate possible stock prices through dice rolls. A coin flip will determine if the stock price is the highest or lowest roll.
             </Text>
             <View style={styles.statsContainer}>
               <View style={styles.stat}>
