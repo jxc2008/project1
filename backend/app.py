@@ -183,7 +183,8 @@ def create_room():
             "roomCode": room_code,
             "num_players": 1,
             "player_list": [username],
-            "host_username": username
+            "host_username": username,
+            "room_code": room_code
         }), 201
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -295,6 +296,7 @@ def join_room():
             "num_players": num_players + 1,
             "player_list": username_list,
             "host_username": host_username,
+            "room_code": room_code
         }), 201
 
     except Exception as e:

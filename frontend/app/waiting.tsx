@@ -13,7 +13,7 @@ interface WaitingRoomProps {
 }
 
 export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: WaitingRoomProps) {
-  const { roomName, roomId, username, num_players, player_list, host_username } = useLocalSearchParams();
+  const { roomName, roomId, username, num_players, player_list, host_username, room_code } = useLocalSearchParams();
   const [dots, setDots] = useState('.');
   const [players, setPlayers] = useState<string[]>(
     Array.isArray(player_list) ? player_list : player_list.split(",")
@@ -105,6 +105,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Trading Game</Text>
+        <Text style={styles.joinCode}>Room Code: {room_code}</Text>
         <View style={styles.content}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#3b82f6" />
@@ -161,6 +162,13 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     color: '#1e3a8a', // Dark blue text
   },
+  joinCode: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 16,
+    color: '#3b82f6', // Blue text
+  },
   content: {
     padding: 16,
   },
@@ -204,3 +212,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
