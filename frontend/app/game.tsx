@@ -460,7 +460,7 @@ export default function GamePage() {
     // Listen for the game_ended event
     socket.on('game_ended', (data) => {
       //alert(data.message); // Notify the player that the game has ended
-      const HOMEPAGE_URL = "https://hi-lo-backend.onrender.com";
+      const HOMEPAGE_URL = "https://hilotrader.org";
       window.location.href = HOMEPAGE_URL; // Redirect to the homepage
     });
   
@@ -568,7 +568,7 @@ export default function GamePage() {
   const handleLeaveGame = () => {
     if (window.confirm('Are you sure you want to leave the game?')) {
       console.log('Redirecting to the homepage...');
-      const HOMEPAGE_URL = "https://hi-lo-backend.onrender.com"; // update!
+      const HOMEPAGE_URL = "https://hilotrader.org"; // update!
       window.location.href = HOMEPAGE_URL; // update!
     }
   };

@@ -42,7 +42,7 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
     }
 
     try {
-      const response = await axios.post(`https://hi-lo-backend.onrender.com/join-room`, {
+      const response = await axios.post(`https://hilotrader.org/join-room`, {
         roomCode: code,
         username: handle,
         password: password || null,
