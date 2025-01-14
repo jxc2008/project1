@@ -592,7 +592,7 @@ export default function GamePage() {
     const socket = getSocket();
     socket.emit('end_game', { roomId }); // Notify the server to end the game
     //alert('The game has ended because there are not enough players.');
-    const HOMEPAGE_URL = "https://hi-lo-backend.onrender.com";
+    const HOMEPAGE_URL = "https://hilotrader.org";
     window.location.href = HOMEPAGE_URL; // Redirect to the homepage
   };
 
