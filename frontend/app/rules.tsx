@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   sectionContainer: {
-    marginBottom: 40,
+    margin: 40,
     backgroundColor: '#1c1c1c',
     borderRadius: 10,
     padding: 30,
