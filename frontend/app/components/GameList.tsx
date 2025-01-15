@@ -86,7 +86,7 @@ export default function GameList() {
     const roomCode = roomCodes[selectedRoom._id];
 
     try {
-      const response = await axios.post(`https://hilotrader.org/join-room`, {
+      const response = await axios.post(`https://hi-lo-backend.onrender.com/join-room`, {
         roomCode,
         username,
         password: selectedRoom.isPrivate ? password : null,
