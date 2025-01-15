@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
 import { MaterialIcons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { getSocket } from '../utils/socket';
-import PlayerInfoPopup, { PlayerRole } from './components/PlayerInfoPopup';
-
+import { PlayerRole } from './components/PlayerInfoPopup';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -150,10 +159,11 @@ const styles = StyleSheet.create({
 export default function GamePage() {
 
   const [loading, setLoading] = useState(true);
+  const [userInput, setUserInput] = useState('');
   const [gameLog, setGameLog] = useState<string[]>([
     'Round has started! Place your bids and asks now.',
-  ]); 
-  const scrollRef = useRef<ScrollView>(null); // Unified ref for the log scroll view - update!
+  ]);
+  const scrollRef = useRef<ScrollView>(null);
   const [currentBid, setCurrentBid] = useState(0);
   const [currentAsk, setCurrentAsk] = useState(21);
   const [playerBalance, setPlayerBalance] = useState(0);
@@ -341,85 +351,87 @@ export default function GamePage() {
     return () => clearInterval(timer);
   }, [endTime]);
   
+  const handleKeyInput = () => {
+    const trimmedInput = userInput.trim().toLowerCase();
+    const bidMatch = trimmedInput.match(/^b(\d+)b$/);
+    const askMatch = trimmedInput.match(/^a(\d+)a$/);
 
-  const handleBid = () => {
-    const socket = getSocket();
-    const number = parseInt(bidAmount, 10);
-  
+    if (bidMatch) {
+      const bidValue = parseInt(bidMatch[1], 10);
+      handleBid(bidValue);
+    } else if (askMatch) {
+      const askValue = parseInt(askMatch[1], 10);
+      handleAsk(askValue);
+    } else if (trimmedInput === 'h') {
+      handleHitBid();
+    } else if (trimmedInput === 'l') {
+      handleLiftAsk();
+    } else {
+      alert('Invalid input. Please use the correct format: b{amount}b, a{amount}a, h, or l.');
+    }
+    setUserInput('');
+  };
+
+  const handleBid = (number) => {
     if (isNaN(number) || number < 1 || number > 20) {
       alert('Invalid bid. It must be between 1 and 20.');
       return;
     }
-  
-    // Check if the bid crosses the current ask
-    if (currentAsk < 21 && number >= currentAsk) {
-      alert("Your bid is higher than or equal to the current ask. Consider hitting the bid or lifting the ask instead.");
-      // After alert is dismissed, the timer will update based on the recalculated timeLeft.
+    if (number >= currentAsk && currentAsk < 21) {
+      alert("Your bid is higher than or equal to the current ask.");
       return;
     }
-  
-    // Ensure the bid is higher than the current bid
     if (number <= currentBid) {
-      alert('Invalid bid. It must be greater than the current bid.');
+      alert('Your bid must be higher than the current bid.');
       return;
     }
-  
-    socket.emit("make_market", { roomId, playerName: username, action: "bid", number });
-    setBidAmount("");
+    const socket = getSocket();
+    socket.emit('make_market', { action: 'bid', number });
+    setGameLog((prevLog) => [...prevLog, `You placed a bid for $${number}.`]);
+    setCurrentBid(number);
   };
   
   
-  const handleAsk = () => {
-    const socket = getSocket();
-    const value = parseInt(askAmount, 10);
-  
-    if (isNaN(value) || value < 1 || value > 20) {
+  const handleAsk = (number) => {
+    if (isNaN(number) || number < 1 || number > 20) {
       alert('Invalid ask. It must be between 1 and 20.');
       return;
     }
-  
-    // Check if the ask crosses the current bid
-    if (currentBid > 0 && value <= currentBid) {
-      alert("Your ask is lower than or equal to the current bid. Consider hitting the bid instead!");
+    if (number <= currentBid && currentBid > 0) {
+      alert("Your ask is lower than or equal to the current bid.");
       return;
     }
-  
-    // Ensure the ask is less than the current ask
-    if (value >= currentAsk) {
-      alert('Invalid ask. It must be less than the current ask.');
+    if (number >= currentAsk) {
+      alert('Your ask must be lower than the current ask.');
       return;
     }
-  
-    socket.emit("make_market", { roomId, playerName: username, action: "ask", number: value });
-    setAskAmount("");
+    const socket = getSocket();
+    socket.emit('make_market', { action: 'ask', number });
+    setGameLog((prevLog) => [...prevLog, `You placed an ask for $${number}.`]);
+    setCurrentAsk(number);
   };
   
 
-  const handleHitBid = () => { // Update!
-    const socket = getSocket();
-  
-    if (currentBid > 0) { // Allow hitting the bid if bid > 0
-      socket.emit("take_market", {
-        roomId,
-        playerName: username,
-        action: "hit",
-      });
+  const handleHitBid = () => {
+    if (currentBid > 0) {
+      const socket = getSocket();
+      socket.emit('take_market', { action: 'hit' });
+      setGameLog((prevLog) => [...prevLog, 'You hit the bid!']);
+      setCurrentBid(0);
     } else {
-      alert("No valid bid to hit.");
+      alert('No valid bid to hit.');
     }
   };
 
-  const handleLiftAsk = () => { // Update!
-    const socket = getSocket();
-  
-    if (currentAsk < 21) { // Allow lifting the ask if ask < 21
-      socket.emit("take_market", {
-        roomId,
-        playerName: username,
-        action: "lift",
-      });
+
+  const handleLiftAsk = () => {
+    if (currentAsk < 21) {
+      const socket = getSocket();
+      socket.emit('take_market', { action: 'lift' });
+      setGameLog((prevLog) => [...prevLog, 'You lifted the ask!']);
+      setCurrentAsk(21);
     } else {
-      alert("No valid ask to lift.");
+      alert('No valid ask to lift.');
     }
   };
   
@@ -754,6 +766,17 @@ export default function GamePage() {
               </View>
             );
           })()}
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Command Input</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type command (e.g., b10b, a15a, h, l)"
+            value={userInput}
+            onChangeText={setUserInput}
+            onSubmitEditing={handleKeyInput}
+          />
+        </View>
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Game Log</Text>
