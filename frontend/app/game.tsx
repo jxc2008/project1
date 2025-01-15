@@ -512,7 +512,7 @@ export default function GamePage() {
         
         setStartRoundPopup(true);
         // Reset timer for the new round
-        const newRoundDuration = 10;  // Example duration for debugging
+        const newRoundDuration = 300;  // Example duration for debugging
         setEndTime(Date.now() + newRoundDuration * 1000);
         setTimeLeft(newRoundDuration);
   
