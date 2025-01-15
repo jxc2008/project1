@@ -44,7 +44,7 @@ export default function About() {
 
     return (
         <View style={styles.container}>
-            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+            <Animated.View style={[styles.content]}>
                 <ScrollView
                     contentContainerStyle={styles.scrollContentContainer}
                     onScroll={handleScroll}
