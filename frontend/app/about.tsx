@@ -9,7 +9,7 @@ const FadeInOnScroll: React.FC<{ scrollY: Animated.Value; children: React.ReactN
     const animatedOpacity = Animated.add(
         new Animated.Value(0),
         Animated.multiply(scrollY.interpolate({
-            inputRange: [0, SCREEN_HEIGHT / 2],
+            inputRange: [0, SCREEN_HEIGHT / 4],
             outputRange: [0, 1],
             extrapolate: 'clamp',
         }), new Animated.Value(1))
@@ -29,7 +29,7 @@ export default function About() {
     useEffect(() => {
         Animated.timing(fadeAnim, {
             toValue: 1,
-            duration: 0,
+            duration: 1000,
             useNativeDriver: true,
         }).start();
     }, [fadeAnim]);
@@ -92,7 +92,7 @@ export default function About() {
                                     <Text style={{ fontWeight: 'bold', color: '#fff' }}> University of Illinois</Text>
                                     </Text>
                                     <Text style={styles.bio}>
-                                        I started out with competitive programming but I found my joy in creating applications everyone can use, especially if they solve real world problems on a large scale. Outside of coding, I love trying different kinds of ice cream, playing sports like volleyball or basketball, and traveling wherever I can. Some of my favorite TV shows are Mr. Robot, Vinland Saga, and The Last of Us. If you have any ice cream store recommendations please reach out because I am desperately looking to satiate my cravings.
+                                        I started out with competitive programming but I found my joy in creating applications everyone can use, especially if they solve real world problems on a large scale. Outside of coding, I love trying different kinds of ice cream, playing sports like volleyball or basketball, and traveling wherever I can. I'm always looking for new opportunities to learn and grow, and I'm excited to see where my journey takes me next.
                                     </Text>
                                     <View style={styles.socialLinks}>
                                         <SocialLink icon="logo-instagram" url="https://www.instagram.com/librianli/" onPress={handleSocialLinkPress} size={28}/>
