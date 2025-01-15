@@ -150,9 +150,6 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>Overview</Text>
                 <Text style={styles.description}>
-                  We are Hi-Lo, and here is our game:
-                </Text>
-                <Text style={styles.description}>
                   Every 5 minutes, we will pay or deduct your earnings based on how well you traded on our stock market.
                 </Text>
                 <Text style={styles.description}>
