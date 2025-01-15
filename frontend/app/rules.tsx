@@ -196,13 +196,13 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>Insider Information</Text>
                 <Text style={styles.description}>
-                  Three of employees receive vital information:
+                  Three employees receive vital information:
                 </Text>
                 <View style={styles.exampleContainer}>
                   <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>One employee</Text> learns the first die roll.</Text>
                   <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>Another employee</Text> learns the second roll.</Text>
                   <Text style={styles.exampleText}>🪙 <Text style={styles.exampleHighlight}>The third employee</Text> learns the coin flip result (HI/LO).</Text>
-                  <Text style={styles.exampleText}>📜 Other players receive <Text style={styles.exampleHighlight}>Trading Contracts</Text> (e.g., [Long, 4] means to buy 4+ shares).</Text>
+                  <Text style={styles.exampleText}>📜 Other employees receive <Text style={styles.exampleHighlight}>Trading Contracts</Text> (e.g., [Long, 4] means to buy 4+ shares).</Text>
                   <Text style={styles.exampleText}>⚠️ Failing to meet contract requirements costs a <Text style={styles.exampleHighlight}>$100 penalty in your salary!</Text></Text>
                 </View>
               </View>
@@ -216,7 +216,7 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>Trading Mechanics</Text>
                 <Text style={styles.description}>
-                  Please be advised that these learning our company's trading vocabulary is essential to your success as an employee.
+                  Please be advised that learning our company's trading vocabulary is essential to your success as an employee.
                 </Text>
                 <Text style={styles.description}>
                   The market operates on Bids (highest offered buy price) and Asks (lowest offered sell price).
@@ -240,7 +240,7 @@ export default function DramaticRules() {
                   After 5 minutes, trading stops and the real share price is revealed. Your profit/loss is calculated from all your trades.
                 </Text>
                 <View style={styles.exampleContainer}>
-                  <Text style={styles.exampleText}>📈 Example: If the share price is 15, buying 2 units at $13 (+$4) and selling 1 at $17 (+$2) gives you <Text style={styles.exampleHighlight}>$6 total profit.</Text>.</Text>
+                  <Text style={styles.exampleText}>📈 Example: If the share price is 15, buying 2 shares at $13 (+$4) and selling 1 share at $17 (+$2) gives you <Text style={styles.exampleHighlight}>$6 total profit.</Text>.</Text>
                   <Text style={styles.exampleText}>⚠️ Contract penalties are applied if required.</Text>
                 </View>
               </View>

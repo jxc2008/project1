@@ -9,7 +9,7 @@ const FadeInOnScroll: React.FC<{ scrollY: Animated.Value; children: React.ReactN
     const animatedOpacity = Animated.add(
         new Animated.Value(0),
         Animated.multiply(scrollY.interpolate({
-            inputRange: [0, SCREEN_HEIGHT / 4],
+            inputRange: [0, 0],
             outputRange: [0, 1],
             extrapolate: 'clamp',
         }), new Animated.Value(1))
@@ -44,7 +44,7 @@ export default function About() {
 
     return (
         <View style={styles.container}>
-            <Animated.View style={[styles.content]}>
+            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                 <ScrollView
                     contentContainerStyle={styles.scrollContentContainer}
                     onScroll={handleScroll}
