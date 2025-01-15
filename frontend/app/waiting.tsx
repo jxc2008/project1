@@ -71,18 +71,6 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   useEffect(() => {
       const socket = getSocket();
     
-      // Separate visibility change handler specifically for tab close
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'hidden') {
-          // Aggressive disconnect when tab is being closed
-          socket.emit('leave_game', { username, roomId });
-          navigator.sendBeacon(
-            "https://hi-lo-backend.onrender.com/disconnect",
-            JSON.stringify({ roomId, username })
-          );
-        }
-      };
-    
       // Handle beforeunload for refresh/navigation
       const handleBeforeUnload = (event: BeforeUnloadEvent) => {
         event.preventDefault();
@@ -90,7 +78,6 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
       };
     
       // Add both event listeners
-      document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('beforeunload', handleBeforeUnload);
     
       // Cleanup function
@@ -100,7 +87,6 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
           "https://hi-lo-backend.onrender.com/disconnect",
           JSON.stringify({ roomId, username })
         );
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         socket.off('player_left');
         socket.off('update_host');
