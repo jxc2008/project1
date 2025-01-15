@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { getSocket } from '../utils/socket';
 import { PlayerRole } from './components/PlayerInfoPopup';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -157,7 +158,6 @@ const styles = StyleSheet.create({
 });
 
 export default function GamePage() {
-
   const [loading, setLoading] = useState(true);
   const [userInput, setUserInput] = useState('');
   const [gameLog, setGameLog] = useState<string[]>([
@@ -176,7 +176,6 @@ export default function GamePage() {
   const [timeLeft, setTimeLeft] = useState(roundDuration);
   const [endRoundPopup, setEndRoundPopup] = useState(false);
 
-  
   const [playerInfo, setPlayerInfo] = useState<{ contract: any; diceRoll?: number; coinFlip?: string }>({ contract: null });
 
   const [host, setHost] = useState('');
@@ -196,10 +195,9 @@ export default function GamePage() {
   });
   const [newRoundPopup, setNewRoundPopup] = useState(false);
 
-  const [renderRound, setRenderRound] = useState(0); 
+  const [renderRound, setRenderRound] = useState(0);
 
   const { roomId, username, gameData } = useLocalSearchParams();
-  
 
   useEffect(() => {
     if (!gameData) {
@@ -213,7 +211,7 @@ export default function GamePage() {
     try {
       const parsedGameData = JSON.parse(Array.isArray(gameData) ? gameData[0] : gameData);
       const finalData = typeof parsedGameData === 'string' ? JSON.parse(parsedGameData) : parsedGameData;
-    
+
       setHost(finalData.host);
       setPlayerCount(finalData.player_count);
       setCurrentRound(finalData.current_round);
@@ -235,7 +233,7 @@ export default function GamePage() {
         cumulativePnl: player.cumulative_pnl,
         roundPnl: player.round_pnl,
       }));
-      
+
       setPlayers(playersData);
       console.log('Players Data:', playersData);
       console.log('Current username:', username);
@@ -252,8 +250,8 @@ export default function GamePage() {
           console.log('Set as contractor with contract:', currentPlayer.contract);
         } else {
           const hasDiceRoll = currentPlayer.record.some(record => record[0] === 'dice_roll');
-          const diceRoll = hasDiceRoll ? 
-            currentPlayer.record.find(record => record[0] === 'dice_roll')[1] : 
+          const diceRoll = hasDiceRoll ?
+            currentPlayer.record.find(record => record[0] === 'dice_roll')[1] :
             undefined;
 
           setPlayerInfo({
@@ -272,24 +270,24 @@ export default function GamePage() {
     } catch (error) {
       console.error('Failed to parse gameData:', error);
     }
-  }, [gameData, username]);  
+  }, [gameData, username]);
 
   const navigation = useNavigation();
 
   useEffect(() => {
     const socket = getSocket();
-  
+
     socket.on('player_left', (data) => {
       console.log(`${data.username} has left the game.`);
       setGameLog((prevLog) => [
         ...prevLog,
         `${data.username} has left the game.`,
       ]);
-  
+
       // Update the players list by removing the player who left
       const updatedPlayers = players.filter(player => player.username !== data.username);
       setPlayers(updatedPlayers);
-  
+
       // Check if the leaving player is the host
       if (data.username === host) {
         // Update the host to the new host (if provided in the event)
@@ -308,7 +306,7 @@ export default function GamePage() {
           handleEndGame();
         }
       }
-  
+
       // Check if the number of players is less than 4
       if (updatedPlayers.length < 4 && data.username == host) {
         setGameLog((prevLog) => [
@@ -318,19 +316,19 @@ export default function GamePage() {
         handleEndGame(); // End the game if there are fewer than 4 players
       }
     });
-  
+
     return () => {
       socket.off('player_left');
     };
   }, [host, players]);
-  
+
   useEffect(() => {
     const socket = getSocket();
-  
+
     socket.on('update_host', (data) => {
       setHost(data.newHost);
     });
-  
+
     return () => {
       socket.off('update_host');
     };
@@ -347,10 +345,10 @@ export default function GamePage() {
       const newTimeLeft = Math.max(Math.floor((endTime - Date.now()) / 1000), 0);
       setTimeLeft(newTimeLeft);
     }, 1000);
-  
+
     return () => clearInterval(timer);
   }, [endTime]);
-  
+
   const handleKeyInput = () => {
     const trimmedInput = userInput.trim().toLowerCase();
     const bidMatch = trimmedInput.match(/^b(\d+)b$/);
@@ -390,8 +388,7 @@ export default function GamePage() {
     setGameLog((prevLog) => [...prevLog, `You placed a bid for $${number}.`]);
     setCurrentBid(number);
   };
-  
-  
+
   const handleAsk = (number) => {
     if (isNaN(number) || number < 1 || number > 20) {
       alert('Invalid ask. It must be between 1 and 20.');
@@ -410,7 +407,6 @@ export default function GamePage() {
     setGameLog((prevLog) => [...prevLog, `You placed an ask for $${number}.`]);
     setCurrentAsk(number);
   };
-  
 
   const handleHitBid = () => {
     if (currentBid > 0) {
@@ -423,7 +419,6 @@ export default function GamePage() {
     }
   };
 
-
   const handleLiftAsk = () => {
     if (currentAsk < 21) {
       const socket = getSocket();
@@ -434,7 +429,6 @@ export default function GamePage() {
       alert('No valid ask to lift.');
     }
   };
-  
 
   useEffect(() => {
     const socket = getSocket();
@@ -443,13 +437,13 @@ export default function GamePage() {
       if (data.action === "hit") {
         setGameLog((prevLog) => [
           ...prevLog,
-          `${data.playerName} has hit the bid! Sold to ${data.bidPlayer} for $${data.price}.`, // Update!
+          `${data.playerName} has hit the bid! Sold to ${data.bidPlayer} for $${data.price}.`,
         ]);
         setCurrentBid(0); // Reset the bid
       } else if (data.action === "lift") {
         setGameLog((prevLog) => [
           ...prevLog,
-          `${data.playerName} has lifted the ask! Bought from ${data.askPlayer} for $${data.price}.`, // Update!
+          `${data.playerName} has lifted the ask! Bought from ${data.askPlayer} for $${data.price}.`,
         ]);
         setCurrentAsk(21); // Reset the ask
       } else if (data.action === "ask") {
@@ -468,14 +462,13 @@ export default function GamePage() {
 
   useEffect(() => {
     const socket = getSocket();
-  
+
     // Listen for the game_ended event
     socket.on('game_ended', (data) => {
-      //alert(data.message); // Notify the player that the game has ended
       const HOMEPAGE_URL = "https://hilotrader.org";
       window.location.href = HOMEPAGE_URL; // Redirect to the homepage
     });
-  
+
     // Clean up the event listener when the component unmounts
     return () => {
       socket.off('game_ended');
@@ -485,11 +478,11 @@ export default function GamePage() {
   const [startRoundPopup, setStartRoundPopup] = useState(false);
   useEffect(() => {
     const socket = getSocket();
-  
+
     socket.on('start_round', (data) => {
       try {
         const parsedData = JSON.parse(data.gameData);
-  
+
         // Update the state with the new round data
         setCurrentRound(parsedData.current_round);
         setHost(parsedData.host);
@@ -500,7 +493,7 @@ export default function GamePage() {
         setRoundActive(parsedData.round_active);
         setFairValue(parsedData.fair_value);
         setPlayers(parsedData.players || []);
-  
+
         // Recalculate player's role and trading information
         const currentPlayer = (parsedData.players || []).find((p) => p.username === username);
         if (currentPlayer) {
@@ -510,7 +503,7 @@ export default function GamePage() {
           } else {
             const hasDiceRoll = currentPlayer.record.some(record => record[0] === 'dice_roll');
             const diceRoll = hasDiceRoll ? currentPlayer.record.find(record => record[0] === 'dice_roll')[1] : undefined;
-  
+
             setPlayerInfo({
               contract: null,
               diceRoll: diceRoll,
@@ -521,13 +514,13 @@ export default function GamePage() {
         } else {
           console.error('Current player not found in updated players list');
         }
-        
+
         setStartRoundPopup(true);
         // Reset timer for the new round
         const newRoundDuration = 300;  // Example duration for debugging
         setEndTime(Date.now() + newRoundDuration * 1000);
         setTimeLeft(newRoundDuration);
-  
+
         // Show the new round popup
         setEndRoundPopup(false);
         setNewRoundPopup(true);
@@ -542,34 +535,32 @@ export default function GamePage() {
   }, []);
 
   useEffect(() => {
-      const socket = getSocket();
-      //receive end round data
-      socket.on('end_round', (data) => {
-        try {
-          const parsedData = JSON.parse(data.gameData);
-          
-          //for each player in players log their round pnl in the console
-          parsedData.players.forEach((player) => {
-            console.log(player.username, player.round_pnl);
-          });
+    const socket = getSocket();
+    //receive end round data
+    socket.on('end_round', (data) => {
+      try {
+        const parsedData = JSON.parse(data.gameData);
 
+        //for each player in players log their round pnl in the console
+        parsedData.players.forEach((player) => {
+          console.log(player.username, player.round_pnl);
+        });
 
-          setPlayers(parsedData.players);
-          setEndRoundPopup(true); 
+        setPlayers(parsedData.players);
+        setEndRoundPopup(true);
 
-          
-        } catch (error) {
-          console.error('Failed to parse end_round data:', error);
-        }
-      });
+      } catch (error) {
+        console.error('Failed to parse end_round data:', error);
+      }
+    });
   });
 
-   // update!
-  
+  // update!
+
   // update! Modified useEffect to call endRound when timer reaches 0
   useEffect(() => {
     const socket = getSocket();
-  
+
     // Handle beforeunload for refresh/navigation
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -579,10 +570,10 @@ export default function GamePage() {
         JSON.stringify({ roomId, username })
       );
     };
-  
+
     // Add both event listeners
     window.addEventListener('beforeunload', handleBeforeUnload);
-  
+
     // Cleanup function
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -593,7 +584,6 @@ export default function GamePage() {
       socket.off('game_ended');
     };
   }, [roomId, username]);
-  
 
   const handleLeaveGame = () => {
     const socket = getSocket();
@@ -608,7 +598,6 @@ export default function GamePage() {
 
   const handleStartNextRound = () => {
     if (username === host) {
-
       const socket = getSocket();
       socket.emit('start_round', { roomId });  // Emit event to start a new round
       setEndRoundPopup(false);
@@ -624,7 +613,6 @@ export default function GamePage() {
   const handleEndGame = () => {
     const socket = getSocket();
     socket.emit('end_game', { roomId }); // Notify the server to end the game
-    //alert('The game has ended because there are not enough players.');
     const HOMEPAGE_URL = "https://hilotrader.org";
     window.location.href = HOMEPAGE_URL; // Redirect to the homepage
   };
@@ -643,7 +631,7 @@ export default function GamePage() {
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Text style={styles.title}>Stock Trading Game</Text>
-  
+
           <View style={styles.gridContainer}>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Market Info</Text>
@@ -665,7 +653,7 @@ export default function GamePage() {
                 </View>
               </View>
             </View>
-  
+
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Trade Gems</Text>
               <View style={styles.cardContent}>
@@ -678,7 +666,7 @@ export default function GamePage() {
                     value={bidAmount}
                     onChangeText={setBidAmount}
                   />
-                  <TouchableOpacity style={styles.button} onPress={handleBid}>
+                  <TouchableOpacity style={styles.button} onPress={() => handleBid(parseInt(bidAmount))}>
                     <Text style={styles.buttonText}>Place Bid</Text>
                   </TouchableOpacity>
                 </View>
@@ -690,11 +678,11 @@ export default function GamePage() {
                     value={askAmount}
                     onChangeText={setAskAmount}
                   />
-                  <TouchableOpacity style={styles.button} onPress={handleAsk}>
+                  <TouchableOpacity style={styles.button} onPress={() => handleAsk(parseInt(askAmount))}>
                     <Text style={styles.buttonText}>Place Ask</Text>
                   </TouchableOpacity>
                 </View>
-  
+
                 {/* Side-by-Side Buttons */}
                 <View style={styles.buttonRow}>
                   <TouchableOpacity style={styles.secondaryButton} onPress={handleHitBid}>
@@ -706,7 +694,7 @@ export default function GamePage() {
                 </View>
               </View>
             </View>
-  
+
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Player Info</Text>
               <View style={styles.cardContent}>
@@ -759,16 +747,16 @@ export default function GamePage() {
             );
           })()}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Command Input</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Type command (e.g., b10b, a15a, h, l)"
-            value={userInput}
-            onChangeText={setUserInput}
-            onSubmitEditing={handleKeyInput}
-          />
-        </View>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Command Input</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Type command (e.g., b10b, a15a, h, l)"
+              value={userInput}
+              onChangeText={setUserInput}
+              onSubmitEditing={handleKeyInput}
+            />
+          </View>
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Game Log</Text>
@@ -784,7 +772,7 @@ export default function GamePage() {
             <Text style={styles.leaveButtonText}>Leave Game</Text>
           </TouchableOpacity>
         </ScrollView>
-  
+
         {/* End-of-Round Modal */}
         {endRoundPopup && (
           <Modal
@@ -801,20 +789,20 @@ export default function GamePage() {
                   Round PnL:
                 </Text>
                 {players.map((p, index) => (
-          <Text key={index} style={styles.endModalMessage}>
-            {p.username}: {p.round_pnl}
-          </Text>
-        ))}
-        {username === host && (
-          <>
-            <TouchableOpacity style={styles.endModalButton} onPress={handleStartNextRound}>
-              <Text style={styles.endModalButtonText}>Start next round</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.endModalButton} onPress={handleEndGame}>
-              <Text style={styles.endModalButtonText}>End game</Text>
-            </TouchableOpacity>
-            </>
-        )}
+                  <Text key={index} style={styles.endModalMessage}>
+                    {p.username}: {p.round_pnl}
+                  </Text>
+                ))}
+                {username === host && (
+                  <>
+                    <TouchableOpacity style={styles.endModalButton} onPress={handleStartNextRound}>
+                      <Text style={styles.endModalButtonText}>Start next round</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.endModalButton} onPress={handleEndGame}>
+                      <Text style={styles.endModalButtonText}>End game</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </View>
           </Modal>
@@ -831,14 +819,14 @@ export default function GamePage() {
               <View style={styles.endModalContent}>
                 <Text style={styles.endModalTitle}>Round {currentRound} Started!</Text>
                 <Text style={styles.endModalMessage}>
-                  Your Role: {playerRole === 'contractor' ? 
-                    `${playerInfo.contract?.type_of_action}, ${playerInfo.contract?.number}` : 
-                    playerRole === 'insider' ? 
-                    (playerInfo.diceRoll !== undefined ? `Dice Roll: ${playerInfo.diceRoll}` : `Coin Flip: ${playerInfo.coinFlip}`) : 
+                  Your Role: {playerRole === 'contractor' ?
+                    `${playerInfo.contract?.type_of_action}, ${playerInfo.contract?.number}` :
+                    playerRole === 'insider' ?
+                    (playerInfo.diceRoll !== undefined ? `Dice Roll: ${playerInfo.diceRoll}` : `Coin Flip: ${playerInfo.coinFlip}`) :
                     'N/A'}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.endModalButton} 
+                <TouchableOpacity
+                  style={styles.endModalButton}
                   onPress={() => setNewRoundPopup(false)}
                 >
                   <Text style={styles.endModalButtonText}>OK</Text>
