@@ -566,8 +566,11 @@ export default function GamePage() {
   
 
   const handleLeaveGame = () => {
+    const socket = getSocket();
     if (window.confirm('Are you sure you want to leave the game?')) {
       console.log('Redirecting to the homepage...');
+      socket.emit('leave_game', { username: username, roomId: roomId });
+      console.log('Notified the server about leaving the game.');
       const HOMEPAGE_URL = "https://hilotrader.org"; // update!
       window.location.href = HOMEPAGE_URL; // update!
     }
@@ -609,7 +612,7 @@ export default function GamePage() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.title}>Gem Trading Game</Text>
+          <Text style={styles.title}>Stock Trading Game</Text>
   
           <View style={styles.gridContainer}>
             <View style={styles.card}>
