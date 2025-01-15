@@ -69,20 +69,30 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   }, []);
 
   useEffect(() => {
-    const disconnect = () => {
-      navigator.sendBeacon(
-        "https://hilotrader.org/disconnect",
-        JSON.stringify({ roomId, username })
-      );
-    };
+      const socket = getSocket();
+  
+      const disconnect = () => {
+        navigator.sendBeacon(
+          "https://hilotrader.org/disconnect",
+          JSON.stringify({ roomId, username })
+        );
+      };
     
-    window.addEventListener('beforeunload', disconnect);
+      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+        // Notify server about disconnection via WebSocket
+        disconnect();
+        socket.emit('leave_game', { username, roomId });
+        event.preventDefault();
+      };
     
-    return () => {
-      disconnect();
-      window.removeEventListener('beforeunload', disconnect);
-    };
-  }, []);
+      // Attach the event listener for tab close or refresh
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    
+      // Clean up the event listener on component unmount
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      };
+    }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
