@@ -93,7 +93,7 @@ export default function About() {
                                     </Text>
                                     <Text style={styles.bio}>
                                         {/* Placeholder for Brian's bio */}
-                                        Bio coming soon...
+                                        Bio coming soon....
                                     </Text>
                                     <View style={styles.socialLinks}>
                                         <SocialLink icon="logo-instagram" url="https://www.instagram.com/librianli/" onPress={handleSocialLinkPress} size={28}/>
