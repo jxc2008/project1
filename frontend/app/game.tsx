@@ -582,9 +582,7 @@ export default function GamePage() {
     };
   
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      console.log('Before unload triggered');
-      handleLeave();
-      
+      console.log('Before unload triggered');    
       event.preventDefault();
     };
   

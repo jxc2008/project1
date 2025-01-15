@@ -88,8 +88,6 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     
       const handleBeforeUnload = (event: BeforeUnloadEvent) => {
         console.log('Before unload triggered');
-        handleLeave();
-        
         event.preventDefault();
       };    
     
