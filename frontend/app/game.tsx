@@ -563,6 +563,25 @@ export default function GamePage() {
     } // update!
   }, [timeLeft]); // update!
   
+  useEffect(() => {
+    const socket = getSocket();
+  
+    const handleBeforeUnload = () => {
+      // Notify server about disconnection via WebSocket
+      socket.emit('leave_game', { username, roomId });
+    };
+  
+    // Attach the event listener for tab close or refresh
+    window.addEventListener('beforeunload', handleBeforeUnload);
+  
+    // Clean up the event listener on component unmount
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+  
+      // Emit the leave_game event one final time during cleanup
+      socket.emit('leave_game', { username, roomId });
+    };
+  }, [username, roomId]);
   
 
   const handleLeaveGame = () => {

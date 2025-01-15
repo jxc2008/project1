@@ -366,7 +366,7 @@ def player_disconnect():
             
     except Exception as e:
         return jsonify({"message": str(e)}), 500
-
+    
 # WebSocket event handlers
 @socketio.on('connect')
 def handle_connect():
