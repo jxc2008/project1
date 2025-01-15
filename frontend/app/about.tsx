@@ -57,7 +57,7 @@ export default function About() {
                             <Text style={styles.letterSubHeader}>The Developers of Hi Lo Stock Market Game</Text>
                             <View style={styles.letterDecoration} />
                             <Text style={styles.description}>
-                                We were inspired to design this game based on the trading games we played in our quant clubs at our respective schools. This game is a full-stack real-time multiplayer project built on React Native, Flask, and MongoDB.
+                                We were inspired to design this game based on the trading games we played in our quant clubs at our respective schools. This game is a full-stack real-time multiplayer project built on React Native, Flask, MongoDB, and SocketIO.
                             </Text>
                         </View>
                     </View>
@@ -88,12 +88,11 @@ export default function About() {
                                 <View style={styles.memberContainer}>
                                     <Text style={styles.sectionTitle}>Brian Li</Text>
                                     <Text style={styles.description}>
-                                        Computer Science student at
-                                    <Text style={{ fontWeight: 'bold', color: '#fff' }}> University of Urbana-Champaign</Text>
+                                        Computer Science student at the
+                                    <Text style={{ fontWeight: 'bold', color: '#fff' }}> University of Illinois</Text>
                                     </Text>
                                     <Text style={styles.bio}>
-                                        {/* Placeholder for Brian's bio */}
-                                        Bio coming soon....
+                                        I started out with competitive programming but I found my joy in creating applications everyone can use, especially if they solve real world problems on a large scale. Outside of coding, I love trying different kinds of ice cream, playing sports like volleyball or basketball, and traveling wherever I can. Some of my favorite TV shows are Mr. Robot, Vinland Saga, and The Last of Us. If you have any ice cream store recommendations please reach out because I am desperately looking to satiate my cravings.
                                     </Text>
                                     <View style={styles.socialLinks}>
                                         <SocialLink icon="logo-instagram" url="https://www.instagram.com/librianli/" onPress={handleSocialLinkPress} size={28}/>
