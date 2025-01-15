@@ -70,7 +70,7 @@ export default function About() {
                                 <View style={styles.memberContainer}>
                                     <Text style={styles.sectionTitle}>Joseph Cheng</Text>
                                     <Text style={styles.description}>
-                                    Computer Science and Mathematics student at 
+                                    Computer Science and Math student at 
                                     <Text style={{ fontWeight: 'bold', color: '#fff' }}> New York University</Text>
                                 </Text>
                                     <Text style={styles.bio}>
@@ -92,7 +92,7 @@ export default function About() {
                                     <Text style={{ fontWeight: 'bold', color: '#fff' }}> University of Illinois</Text>
                                     </Text>
                                     <Text style={styles.bio}>
-                                        I started out with competitive programming but I found my joy in creating applications everyone can use, especially if they solve real world problems on a large scale. Outside of coding, I love trying different kinds of ice cream, playing sports like volleyball or basketball, and traveling wherever I can. I'm always looking for new opportunities to learn and grow, and I'm excited to see where my journey takes me next.
+                                        I started out with competitive programming but I found my joy in creating applications everyone can use. Outside of coding, I love trying different kinds of ice cream, playing sports like volleyball or basketball, and traveling wherever I can. I'm always looking for new opportunities to learn and grow, and I'm excited to see where my journey takes me next.
                                     </Text>
                                     <View style={styles.socialLinks}>
                                         <SocialLink icon="logo-instagram" url="https://www.instagram.com/librianli/" onPress={handleSocialLinkPress} size={28}/>
