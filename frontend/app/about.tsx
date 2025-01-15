@@ -29,7 +29,7 @@ export default function About() {
     useEffect(() => {
         Animated.timing(fadeAnim, {
             toValue: 1,
-            duration: 1000,
+            duration: 0,
             useNativeDriver: true,
         }).start();
     }, [fadeAnim]);
