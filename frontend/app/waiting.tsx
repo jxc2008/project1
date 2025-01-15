@@ -73,31 +73,25 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   
       const handleLeave = () => {
         console.log('Handling leave game for:', username, roomId);
+        
+        // Emit socket event first
         socket.emit('leave_game', { username, roomId });
         
-        // Use fetch with keepalive to ensure the request completes
-        fetch('https://hilotrader.org/disconnect', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // Setting keepalive to ensure the request completes even during page unload
-            'Keep-Alive': 'true'
-          },
-          // Setting keepalive flag for the fetch request
-          keepalive: true,
-          body: JSON.stringify({ roomId, username })
-        }).catch(err => console.error('Failed to send disconnect:', err));
+        // Use sendBeacon as it bypasses CORS
+        const success = navigator.sendBeacon(
+          "https://hi-lo-backend.onrender.com/disconnect",
+          JSON.stringify({ roomId, username })
+        );
+        
+        console.log('Beacon sent successfully:', success);
       };
     
-      // Handle tab/window close
       const handleBeforeUnload = (event: BeforeUnloadEvent) => {
         console.log('Before unload triggered');
         handleLeave();
         
-        // For some browsers, returning a string prompts "Leave Site?" dialog
         event.preventDefault();
-        return (event.returnValue = '');
-      };
+      };    
     
       // Handle when component unmounts or route changes
       const handleUnmount = () => {
