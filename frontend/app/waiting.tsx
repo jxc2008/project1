@@ -70,41 +70,43 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
 
   useEffect(() => {
       const socket = getSocket();
-  
-      const handleLeave = () => {
-        console.log('Handling leave game for:', username, roomId);
-        
-        // Emit socket event first
+    
+      // Separate visibility change handler specifically for tab close
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+          // Aggressive disconnect when tab is being closed
+          socket.emit('leave_game', { username, roomId });
+          navigator.sendBeacon(
+            "https://hi-lo-backend.onrender.com/disconnect",
+            JSON.stringify({ roomId, username })
+          );
+        }
+      };
+    
+      // Handle beforeunload for refresh/navigation
+      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+        event.preventDefault();
+        return (event.returnValue = '');
+      };
+    
+      // Add both event listeners
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    
+      // Cleanup function
+      return () => {
         socket.emit('leave_game', { username, roomId });
-        
-        // Use sendBeacon as it bypasses CORS
-        const success = navigator.sendBeacon(
+        navigator.sendBeacon(
           "https://hi-lo-backend.onrender.com/disconnect",
           JSON.stringify({ roomId, username })
         );
-        
-        console.log('Beacon sent successfully:', success);
-      };
-    
-      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-        console.log('Before unload triggered');
-        event.preventDefault();
-      };    
-    
-      // Handle when component unmounts or route changes
-      const handleUnmount = () => {
-        console.log('Component unmounting');
-        handleLeave();
-      };
-    
-      // Add event listeners
-      window.addEventListener('beforeunload', handleBeforeUnload);
-    
-      // Return cleanup function
-      return () => {
-        console.log('Cleaning up event listeners and socket connections');
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('beforeunload', handleBeforeUnload);
-        handleUnmount();
+        socket.off('player_left');
+        socket.off('update_host');
+        socket.off('start_round');
+        socket.off('end_round');
+        socket.off('game_ended');
       };
     }, [roomId, username]);
 
