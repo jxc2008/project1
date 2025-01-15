@@ -74,7 +74,11 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
       // Handle beforeunload for refresh/navigation
       const handleBeforeUnload = (event: BeforeUnloadEvent) => {
         event.preventDefault();
-        return (event.returnValue = '');
+        socket.emit('leave_game', { username, roomId });
+        navigator.sendBeacon(
+          "https://hi-lo-backend.onrender.com/disconnect",
+          JSON.stringify({ roomId, username })
+        );
       };
     
       // Add both event listeners
@@ -82,11 +86,6 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     
       // Cleanup function
       return () => {
-        socket.emit('leave_game', { username, roomId });
-        navigator.sendBeacon(
-          "https://hi-lo-backend.onrender.com/disconnect",
-          JSON.stringify({ roomId, username })
-        );
         window.removeEventListener('beforeunload', handleBeforeUnload);
         socket.off('player_left');
         socket.off('update_host');
