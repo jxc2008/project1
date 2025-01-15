@@ -565,9 +565,17 @@ export default function GamePage() {
   
   useEffect(() => {
     const socket = getSocket();
+
+    const disconnect = () => {
+      navigator.sendBeacon(
+        "https://hilotrader.org/disconnect",
+        JSON.stringify({ roomId, username })
+      );
+    };
   
     const handleBeforeUnload = () => {
       // Notify server about disconnection via WebSocket
+      disconnect();
       socket.emit('leave_game', { username, roomId });
     };
   
@@ -581,7 +589,7 @@ export default function GamePage() {
       // Emit the leave_game event one final time during cleanup
       socket.emit('leave_game', { username, roomId });
     };
-  }, [username, roomId]);
+  });
   
 
   const handleLeaveGame = () => {
