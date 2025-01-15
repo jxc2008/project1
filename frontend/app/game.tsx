@@ -440,7 +440,8 @@ export default function GamePage() {
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on("market_update", (data) => {
+    socket.on('market_update', (data) => {
+      console.log(`Received market_update from server:`, data);
       if (data.action === "hit") {
         setGameLog((prevLog) => [
           ...prevLog,
@@ -453,43 +454,38 @@ export default function GamePage() {
           `${data.playerName} has lifted the ask! Bought from ${data.askPlayer} for $${data.price}.`,
         ]);
         setCurrentAsk(21); // Reset the ask
-      } else if (data.action === "ask") {
-        setCurrentAsk(data.currentAsk);
-        setGameLog((prevLog) => [...prevLog, data.logMessage]);
-      } else if (data.action === "bid") {
-        setCurrentBid(data.currentBid);
-        setGameLog((prevLog) => [...prevLog, data.logMessage]);
       }
     });
 
-        // #update! Listen for bid updates from other players
     socket.on('update_bid', (data) => {
+      console.log(`Received update_bid from server:`, data);
       if (data.bid > currentBid) {
         setCurrentBid(data.bid);
         setGameLog((prevLog) => [
           ...prevLog,
-          `${data.player} placed a bid for $${data.bid}.`,
+          `[${new Date().toLocaleTimeString()}] ${data.player} placed a bid for $${data.bid}.`,
         ]);
       }
     });
-
-    // #update! Listen for ask updates from other players
+  
+    // Listen for ask updates from other players
     socket.on('update_ask', (data) => {
+      console.log(`Received update_ask from server:`, data);
       if (data.ask < currentAsk) {
         setCurrentAsk(data.ask);
         setGameLog((prevLog) => [
           ...prevLog,
-          `${data.player} placed an ask for $${data.ask}.`,
+          `[${new Date().toLocaleTimeString()}] ${data.player} placed an ask for $${data.ask}.`,
         ]);
       }
     });
 
     return () => {
-      socket.off("market_update");
       socket.off('update_bid');
       socket.off('update_ask');
+      socket.off('market_update');
     };
-  }, []);
+  }, [currentBid, currentAsk]);
 
   useEffect(() => {
     const socket = getSocket();
