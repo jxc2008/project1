@@ -387,6 +387,9 @@ export default function GamePage() {
     socket.emit('make_market', { action: 'bid', number });
     setGameLog((prevLog) => [...prevLog, `You placed a bid for $${number}.`]);
     setCurrentBid(number);
+
+    // #update! Emit socket event to update other players
+    socket.emit('update_bid', { bid: number, player: username });
   };
 
   const handleAsk = (number) => {
@@ -406,6 +409,9 @@ export default function GamePage() {
     socket.emit('make_market', { action: 'ask', number });
     setGameLog((prevLog) => [...prevLog, `You placed an ask for $${number}.`]);
     setCurrentAsk(number);
+
+    // #update! Emit socket event to update other players
+    socket.emit('update_ask', { ask: number, player: username });
   };
 
   const handleHitBid = () => {
@@ -429,6 +435,7 @@ export default function GamePage() {
       alert('No valid ask to lift.');
     }
   };
+
 
   useEffect(() => {
     const socket = getSocket();
@@ -455,8 +462,32 @@ export default function GamePage() {
       }
     });
 
+        // #update! Listen for bid updates from other players
+    socket.on('update_bid', (data) => {
+      if (data.bid > currentBid) {
+        setCurrentBid(data.bid);
+        setGameLog((prevLog) => [
+          ...prevLog,
+          `${data.player} placed a bid for $${data.bid}.`,
+        ]);
+      }
+    });
+
+    // #update! Listen for ask updates from other players
+    socket.on('update_ask', (data) => {
+      if (data.ask < currentAsk) {
+        setCurrentAsk(data.ask);
+        setGameLog((prevLog) => [
+          ...prevLog,
+          `${data.player} placed an ask for $${data.ask}.`,
+        ]);
+      }
+    });
+
     return () => {
       socket.off("market_update");
+      socket.off('update_bid');
+      socket.off('update_ask');
     };
   }, []);
 
