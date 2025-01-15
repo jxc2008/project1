@@ -71,28 +71,50 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   useEffect(() => {
       const socket = getSocket();
   
-      const disconnect = () => {
-        navigator.sendBeacon(
-          "https://hilotrader.org/disconnect",
-          JSON.stringify({ roomId, username })
-        );
-      };
-    
-      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-        // Notify server about disconnection via WebSocket
-        disconnect();
+      const handleLeave = () => {
+        console.log('Handling leave game for:', username, roomId);
         socket.emit('leave_game', { username, roomId });
-        event.preventDefault();
+        
+        // Use fetch with keepalive to ensure the request completes
+        fetch('https://hilotrader.org/disconnect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Setting keepalive to ensure the request completes even during page unload
+            'Keep-Alive': 'true'
+          },
+          // Setting keepalive flag for the fetch request
+          keepalive: true,
+          body: JSON.stringify({ roomId, username })
+        }).catch(err => console.error('Failed to send disconnect:', err));
       };
     
-      // Attach the event listener for tab close or refresh
+      // Handle tab/window close
+      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+        console.log('Before unload triggered');
+        handleLeave();
+        
+        // For some browsers, returning a string prompts "Leave Site?" dialog
+        event.preventDefault();
+        return (event.returnValue = '');
+      };
+    
+      // Handle when component unmounts or route changes
+      const handleUnmount = () => {
+        console.log('Component unmounting');
+        handleLeave();
+      };
+    
+      // Add event listeners
       window.addEventListener('beforeunload', handleBeforeUnload);
     
-      // Clean up the event listener on component unmount
+      // Return cleanup function
       return () => {
+        console.log('Cleaning up event listeners and socket connections');
         window.removeEventListener('beforeunload', handleBeforeUnload);
+        handleUnmount();
       };
-    }, []);
+    }, [roomId, username]);
 
   useEffect(() => {
     const interval = setInterval(() => {
