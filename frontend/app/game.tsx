@@ -387,9 +387,6 @@ export default function GamePage() {
     socket.emit('make_market', { action: 'bid', number });
     setGameLog((prevLog) => [...prevLog, `You placed a bid for $${number}.`]);
     setCurrentBid(number);
-
-    // #update! Emit socket event to update other players
-    socket.emit('update_bid', { bid: number, player: username });
   };
 
   const handleAsk = (number) => {
@@ -409,9 +406,6 @@ export default function GamePage() {
     socket.emit('make_market', { action: 'ask', number });
     setGameLog((prevLog) => [...prevLog, `You placed an ask for $${number}.`]);
     setCurrentAsk(number);
-
-    // #update! Emit socket event to update other players
-    socket.emit('update_ask', { ask: number, player: username });
   };
 
   const handleHitBid = () => {
@@ -456,36 +450,10 @@ export default function GamePage() {
         setCurrentAsk(21); // Reset the ask
       }
     });
-
-    socket.on('update_bid', (data) => {
-      console.log(`Received update_bid from server:`, data);
-      if (data.bid > currentBid) {
-        setCurrentBid(data.bid);
-        setGameLog((prevLog) => [
-          ...prevLog,
-          `[${new Date().toLocaleTimeString()}] ${data.player} placed a bid for $${data.bid}.`,
-        ]);
-      }
-    });
-  
-    // Listen for ask updates from other players
-    socket.on('update_ask', (data) => {
-      console.log(`Received update_ask from server:`, data);
-      if (data.ask < currentAsk) {
-        setCurrentAsk(data.ask);
-        setGameLog((prevLog) => [
-          ...prevLog,
-          `[${new Date().toLocaleTimeString()}] ${data.player} placed an ask for $${data.ask}.`,
-        ]);
-      }
-    });
-
     return () => {
-      socket.off('update_bid');
-      socket.off('update_ask');
-      socket.off('market_update');
+      socket.off("market_update");
     };
-  }, [currentBid, currentAsk]);
+  }, []);
 
   useEffect(() => {
     const socket = getSocket();
