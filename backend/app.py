@@ -461,9 +461,10 @@ def handle_make_market(data):
             "askPlayer": game.ask_player.name if game.ask_player else None,
             "logMessage": result["message"],  # Include the log message
         }, room=room_id)
+        print("runs")
     else:
         emit("market_update", result)
-
+        print("runs!")
 @socketio.on('take_market')
 def handle_take_market(data):  # update!
     room_id = data.get("roomId")  # update!
