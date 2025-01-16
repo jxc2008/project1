@@ -454,6 +454,12 @@ export default function GamePage() {
           `${data.playerName} has lifted the ask! Bought from ${data.askPlayer} for $${data.price}.`,
         ]);
         setCurrentAsk(21); // Reset the ask
+      } else if (data.action === "ask") {
+        setCurrentAsk(data.currentAsk);
+        setGameLog((prevLog) => [...prevLog, data.logMessage]);
+      } else if (data.action === "bid") {
+        setCurrentBid(data.currentBid);
+        setGameLog((prevLog) => [...prevLog, data.logMessage]);
       }
     });
     return () => {
