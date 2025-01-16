@@ -17,6 +17,8 @@ CORS(app, origins=["*"])
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
+    logger=True,
+    engineio_logger=True,
     ping_timeout=60,
     ping_interval=25,
     transports=['websocket']
@@ -41,7 +43,6 @@ def serialize_game(game):
                 "sell_count": player.sell_count,
                 "record": player.record,
                 "cumulative_pnl": player.cumulative_pnl,
-                "round_pnl": player.round_pnl,  
             }
             for player in game.players
         ],
@@ -82,7 +83,6 @@ def deserialize_game(game_data):
         player.sell_count = player_data.get("sell_count", 0)
         player.record = player_data.get("record", [])
         player.cumulative_pnl = player_data.get("cumulative_pnl", 0)
-        player.round_pnl = player_data.get("round_pnl", 0)
 
         # Restore contract
         contract_data = player_data.get("contract")
@@ -183,8 +183,7 @@ def create_room():
             "roomCode": room_code,
             "num_players": 1,
             "player_list": [username],
-            "host_username": username,
-            "room_code": room_code
+            "host_username": username
         }), 201
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -296,7 +295,6 @@ def join_room():
             "num_players": num_players + 1,
             "player_list": username_list,
             "host_username": host_username,
-            "room_code": room_code
         }), 201
 
     except Exception as e:
@@ -319,54 +317,34 @@ def player_disconnect():
         
         game = deserialize_game(room.get("game", {}))
 
-        # Remove the player who left
         game.players = [player for player in game.players if player.name != username]
         game.player_count = len(game.players)
 
-        # Check if the leaving player is the host
-        if username == game.get_host():
-            # Transfer host to the first player who joined after the host (or any active player)
-            new_host = None
-            if game.players:
-                new_host = game.players[0].name  # Assign host to the first player in the list
-                game.set_host(new_host)
 
-                # Notify all players about the new host
-                socketio.emit('update_host', {
-                    "roomId": str(room["_id"]),
-                    "newHost": new_host
-                }, room=str(room["_id"]))
+        if game.player_count == 0:
+            # Delete room if no players remain
+            rooms_collection.delete_one({"_id": ObjectId(room_id)})
+            return jsonify({"message": "Player removed and room deleted"}), 200
+        else:
+            # Update room with new game state if players remain
+            rooms_collection.update_one(
+                {"_id": ObjectId(room_id)},
+                {"$set": {"game": serialize_game(game)}}
+            )
 
-                # Log the new host in the game log
-                socketio.emit('player_left', {
-                    "roomId": str(room["_id"]),
-                    "username": username,
-                    "num_players": game.player_count,
-                    "newHost": new_host  
-                }, room=str(room["_id"]))
-            else:
-                # If no players are left, delete the room
-                rooms_collection.delete_one({"_id": ObjectId(room_id)})
-                return jsonify({"message": "Room deleted because no players are left"}), 200
+            # Notify all clients in the room about the player leaving
+            socketio.emit('player_left', {
+                "roomId": str(room["_id"]),
+                "username": username,
+                "num_players": game.player_count
+            }, room=str(room["_id"]))
 
-        # Update the room with the new game state
-        rooms_collection.update_one(
-            {"_id": ObjectId(room_id)},
-            {"$set": {"game": serialize_game(game)}}
-        )
-
-        # Notify all clients in the room about the player leaving
-        socketio.emit('player_left', {
-            "roomId": str(room["_id"]),
-            "username": username,
-            "num_players": game.player_count
-        }, room=str(room["_id"]))
-
-        return jsonify({"message": "Player removed"}), 200
+            return jsonify({"message": "Player removed"}), 200
+            
             
     except Exception as e:
         return jsonify({"message": str(e)}), 500
-    
+
 # WebSocket event handlers
 @socketio.on('connect')
 def handle_connect():
@@ -402,6 +380,37 @@ def handle_start_game(data):
         "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
     }, room=room_id)
     
+@socketio.on('start_round')
+def start_round(data):
+    room_id = data.get('roomId')
+    print(f"Starting new round for room: {room_id}")
+
+    # Retrieve the current game state from the database
+    room_doc = rooms_collection.find_one({"_id": ObjectId(room_id)})
+    if not room_doc:
+        print("Room not found.")
+        return
+
+    # Deserialize game state
+    game = deserialize_game(room_doc.get("game", {}))
+    
+    # Start a new round: increments round number, assigns new roles, resets round-specific data
+    game.start_new_round()
+
+    # Persist the updated game state back to the database
+    rooms_collection.update_one(
+        {"_id": ObjectId(room_id)},
+        {"$set": {"game": serialize_game(game)}}
+    )
+
+    # Serialize updated game state to send to clients
+    game_data = serialize_game(game)
+
+    # Emit the 'start_round' event to all clients in the room with updated game data
+    socketio.emit('start_round', {
+        "roomId": room_id,
+        "gameData": json.dumps(game_data)  # Ensure game_data is a JSON string
+    }, room=room_id)
 
 @socketio.on('start_round')
 def start_round_event(data):
@@ -451,61 +460,53 @@ def handle_make_market(data):
             {"_id": ObjectId(room_id)},
             {"$set": {"game": serialize_game(game)}}
         )
-
-        # Broadcast the updated bid or ask to all players
-        if action == "bid":
-            socketio.emit("update_bid", {
-                "bid": number,
-                "player": player_name,
-                "currentBid": game.current_bid,
-                "logMessage": result["message"],
-            }, room=room_id)
-        elif action == "ask":
-            socketio.emit("update_ask", {
-                "ask": number,
-                "player": player_name,
-                "currentAsk": game.current_ask,
-                "logMessage": result["message"],
-            }, room=room_id)
+        socketio.emit("market_update", {
+            "success": True,
+            "action": action,
+            "number": number,
+            "currentBid": game.current_bid,
+            "currentAsk": game.current_ask,
+            "bidPlayer": game.bid_player.name if game.bid_player else None,
+            "askPlayer": game.ask_player.name if game.ask_player else None,
+            "logMessage": result["message"],  # Include the log message
+        }, room=room_id)
     else:
         emit("market_update", result)
 
 @socketio.on('take_market')
-def handle_take_market(data):
-    room_id = data.get("roomId")
-    player_name = data.get("playerName")
-    action = data.get("action")
+def handle_take_market(data):  # update!
+    room_id = data.get("roomId")  # update!
+    player_name = data.get("playerName")  # update!
+    action = data.get("action")  # update!
 
-    room = rooms_collection.find_one({"_id": ObjectId(room_id)})
-    if not room:
-        emit("market_update", {"success": False, "message": "Room not found"})
-        return
+    room = rooms_collection.find_one({"_id": ObjectId(room_id)})  # update!
+    if not room:  # update!
+        emit("market_update", {"success": False, "message": "Room not found"})  # update!
+        return  # update!
 
-    game = deserialize_game(room.get("game", {}))
-    target_player = game.bid_player if action == "hit" else game.ask_player
-    price = game.current_bid if action == "hit" else game.current_ask
+    game = deserialize_game(room.get("game", {}))  # update!
+    target_player = game.bid_player if action=="hit" else game.ask_player  # update!
+    price = game.current_bid if action=="hit" else game.current_ask  # update!
 
-    result = game.take_the_market(player_name, action)
+    result = game.take_the_market(player_name, action)  # update!
 
-    if result["success"]:
-        target_name = target_player.name if target_player else None
-        rooms_collection.update_one(
+    if result["success"]:  # update!
+         target_name = target_player.name if target_player else None  # update!
+         rooms_collection.update_one(  # update!
             {"_id": ObjectId(room_id)},
             {"$set": {"game": serialize_game(game)}}
-        )
-
-        # Broadcast the updated market state to all players
-        socketio.emit("market_update", {
+         )  # update!
+         socketio.emit("market_update", {  # update!
             "success": True,
             "action": action,
             "price": price,
             "playerName": player_name,
-            "bidPlayer": target_name if action == "hit" else None,
-            "askPlayer": target_name if action == "lift" else None,
+            "bidPlayer": target_name if action=="hit" else None,
+            "askPlayer": target_name if action=="lift" else None,
             "logMessage": result["message"],
-        }, room=room_id)
+        }, room=room_id)  # update!
     else:
-        emit("market_update", result)
+        emit("market_update", result)  # update!
 
 @socketio.on('place_ask')
 def handle_place_ask(data):
@@ -552,46 +553,6 @@ def handle_place_ask(data):
     }, room=room_id)
 
     print(f"Player {username} placed an ask of ${value}.")
-    
-@socketio.on('end_round')
-def handle_end_round(data):
-    room_id = data.get('roomId')
-    print("Ending round for room:", room_id)
-    
-    # Retrieve the room document from the database
-    room_doc = rooms_collection.find_one({"_id": ObjectId(room_id)})
-    if not room_doc:
-        print("Room not found for end_round")
-        return
-    
-    # Deserialize game state, end the round, and update the room data
-    game = deserialize_game(room_doc.get("game", {}))
-    game.end_round()  # Call the end_round method from game_logic
-    rooms_collection.update_one(
-        {"_id": ObjectId(room_id)},
-        {"$set": {"game": serialize_game(game)}}
-    )
-    
-    # Emit the end_round event to all players in the room
-    game_data = serialize_game(game)
-    socketio.emit('end_round', {
-        "roomId": room_id,
-        "gameData": json.dumps(game_data)
-    }, room=room_id)  # update! Emit to all players in the room
-
-@socketio.on('end_game')
-def handle_end_game(data):
-    room_id = data.get('roomId')
-    message = data.get('message', 'The game has ended.')
-
-    # Notify all players in the room that the game has ended
-    socketio.emit('game_ended', {
-        "roomId": room_id,
-        "message": message
-    }, room=room_id)
-
-    # Optionally, you can delete the room from the database here
-    rooms_collection.delete_one({"_id": ObjectId(room_id)})
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
