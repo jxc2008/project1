@@ -25,12 +25,12 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
     const socket = getSocket();
 
     console.log('Attempting to connect to Socket.IO server...');
-    
+
     socket.on('connect', () => {
       console.log('Connected to Socket.IO server');
       socket.emit('join_room', { roomId, username });
     });
-  
+
     socket.on('disconnect', () => {
       console.log('Disconnected from Socket.IO server');
     });
@@ -70,7 +70,7 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
 
   useEffect(() => {
       const socket = getSocket();
-    
+
       // Handle beforeunload for refresh/navigation
       const handleBeforeUnload = (event: BeforeUnloadEvent) => {
         event.preventDefault();
@@ -80,10 +80,10 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
           JSON.stringify({ roomId, username })
         );
       };
-    
+
       // Add both event listeners
       window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
       // Cleanup function
       return () => {
         window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -223,4 +223,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
