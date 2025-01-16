@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Animated, ScrollView, Platform } from 'react-native';
 import { Link, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
@@ -145,16 +145,14 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   gameList: {
-    width: '100%',
-    flex: 1,
-    marginVertical: 20,
-    backgroundColor: '#1c1c1c',
+    width: '90%',
+    backgroundColor: '#0f0f0f',
     borderRadius: 10,
     padding: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
+    shadowOpacity: 0.9,
+    shadowRadius: 30,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -164,8 +162,8 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#3b82f6',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: Platform.OS === 'web' ? 12 : 10, // Smaller padding on mobile
+    paddingHorizontal: Platform.OS === 'web' ? 20 : 10,
     borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',

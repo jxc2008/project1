@@ -9,6 +9,7 @@ import {
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
 } from 'react-native';
 import { Link } from 'expo-router';
 
@@ -123,16 +124,24 @@ export default function DramaticRules() {
               <Text style={styles.date}>{new Date().toLocaleDateString()}</Text>
               <Text style={styles.greeting}>Dear Candidate,</Text>
               <Text style={styles.letterBody}>
-                Congratulations! After successfully navigating an especially rigorous recruiting process, we are delighted to extend you a formal offer to join Hi-Lo, LLC as a Quantitative Trader. As one of the most innovative and enigmatic quantitative trading firms of the modern era, we invite you to step into our world and begin an extraordinary journey.
+                {Platform.OS === 'web'
+                  ? 'Congratulations! After successfully navigating an especially rigorous recruiting process, we are delighted to extend you a formal offer to join Hi-Lo, LLC as a Quantitative Trader. As one of the most innovative and enigmatic quantitative trading firms of the modern era, we invite you to step into our world and begin an extraordinary journey.'
+                  : 'Congratulations! After successfully navigating an especially rigorous recruiting process, we are delighted to extend you a formal offer to join Hi-Lo, LLC as a Quantitative Trader.'}
               </Text>
+              {Platform.OS === 'web' && (
+                <Text style={styles.letterBody}>
+                  At Hi-Lo, our company culture thrives on competition. As such, your role will involve competing against your fellow coworkers to generate the highest profits within our proprietary stock market simulation. Your journey begins immediately, and your first task is to master the rules of our dynamic trading game.
+                </Text>
+              )}
+              {Platform.OS === 'web' && (
+                <Text style={styles.letterBody}>
+                  Remember, discretion is paramount—guard your trading strategies closely, as the path to success lies in secrecy and strategy.
+                </Text>
+              )}
               <Text style={styles.letterBody}>
-                At Hi-Lo, our company culture thrives on competition. As such, your role will involve competing against your fellow coworkers to generate the highest profits within our proprietary stock market simulation. Your journey begins immediately, and your first task is to master the rules of our dynamic trading game.
-              </Text>
-              <Text style={styles.letterBody}>
-                Remember, discretion is paramount—guard your trading strategies closely, as the path to success lies in secrecy and strategy.
-              </Text>
-              <Text style={styles.letterBody}>
-                Please find the game rules outlined below. Should you have any questions, our team is here to support you. Until then, may the markets ever move in your favor.
+                {Platform.OS === 'web'
+                  ? 'Please find the game rules outlined below. Should you have any questions, our team is here to support you. Until then, may the markets ever move in your favor.'
+                  : 'Please be advised that your salary will depend on your performance. You will compete against your fellow coworkers to make the most profit. Find the game rules outlined below. '}
               </Text>
               <View style={styles.letterDecoration} />
               <Text style={styles.closing}>Sincerely,</Text>
@@ -150,10 +159,13 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>Overview</Text>
                 <Text style={styles.description}>
-                  Every 5 minutes, we will pay or deduct your earnings based on how well you traded on our stock market.
+                  Every 5 minutes, we will increase or deduct your earnings based on how well you traded our stock on the market.
                 </Text>
                 <Text style={styles.description}>
-                  With seemingly impossible, proprietary algorithms, we generate possible stock prices via dice rolls. A coin flip will determine if the stock price is the highest or lowest roll.
+                  We can manipulate the market such that we can control our own share price with seemingly impossible, proprietary algorithms. Regardless, this is a general overview of how it works:
+                </Text>
+                <Text style={styles.description}>
+                  First, we generate possible stock prices via dice rolls. A coin flip will determine if the actual share price becomes the highest or lowest roll.
                 </Text>
                 <View style={styles.statsContainer}>
                   <View style={styles.stat}>
@@ -176,7 +188,7 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>How the Game Works</Text>
                 <Text style={styles.description}>
-                  Trade an asset with an unknown fair value determined by dice rolls and a coin flip.
+                  You will trade our company's stock with an unkown share price determined by dice rolls and a coin flip.
                 </Text>
                 <View style={styles.exampleContainer}>
                   <Text style={styles.exampleText}>🎯 <Text style={styles.exampleHighlight}>Two 20-sided dice</Text> are rolled (three if 8+ players).</Text>
@@ -193,14 +205,14 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>Insider Information</Text>
                 <Text style={styles.description}>
-                  Three players receive vital information:
+                  Three employees receive vital information:
                 </Text>
                 <View style={styles.exampleContainer}>
-                  <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>One player</Text> learns the first die roll.</Text>
-                  <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>Another player</Text> learns the second roll.</Text>
-                  <Text style={styles.exampleText}>🪙 <Text style={styles.exampleHighlight}>The third player</Text> learns the coin flip result (HI/LO).</Text>
-                  <Text style={styles.exampleText}>📜 Other players receive <Text style={styles.exampleHighlight}>Trading Contracts</Text> (e.g., [Long, 4] means buy 4+ units).</Text>
-                  <Text style={styles.exampleText}>⚠️ Missing contract requirements costs a <Text style={styles.exampleHighlight}>$100 penalty!</Text></Text>
+                  <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>One employee</Text> learns the first die roll.</Text>
+                  <Text style={styles.exampleText}>🎲 <Text style={styles.exampleHighlight}>Another employee</Text> learns the second roll.</Text>
+                  <Text style={styles.exampleText}>🪙 <Text style={styles.exampleHighlight}>The third employee</Text> learns the coin flip result (HI/LO).</Text>
+                  <Text style={styles.exampleText}>📜 Other employees receive <Text style={styles.exampleHighlight}>Trading Contracts</Text> (e.g., [Long, 4] means to buy 4+ shares).</Text>
+                  <Text style={styles.exampleText}>⚠️ Failing to meet contract requirements costs a <Text style={styles.exampleHighlight}>$100 penalty in your salary!</Text></Text>
                 </View>
               </View>
             </FadeInOnScroll>
@@ -213,12 +225,15 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>Trading Mechanics</Text>
                 <Text style={styles.description}>
-                  The market operates on Bids (highest buy price) and Asks (lowest sell price).
+                  Please be advised that learning our company's trading vocabulary is essential to your success as an employee.
+                </Text>
+                <Text style={styles.description}>
+                  The market operates on Bids (highest offered buy price) and Asks (lowest offered sell price).
                 </Text>
                 <View style={styles.exampleContainer}>
                   <Text style={styles.exampleText}>⬆️ New bids must exceed the <Text style={styles.exampleHighlight}>current bid</Text>.</Text>
                   <Text style={styles.exampleText}>⬇️ New asks must be below the <Text style={styles.exampleHighlight}>current ask</Text>.</Text>
-                  <Text style={styles.exampleText}>🤝 Trades happen instantly when someone <Text style={styles.exampleHighlight}>"lifts" an ask</Text> or <Text style={styles.exampleHighlight}>"hits" a bid</Text>.</Text>
+                  <Text style={styles.exampleText}>🤝 Trades happen instantly when someone <Text style={styles.exampleHighlight}>"lifts" an ask (buys the offered ask) </Text> or <Text style={styles.exampleHighlight}>"hits" a bid (sells the offered bid)</Text>.</Text>
                 </View>
               </View>
             </FadeInOnScroll>
@@ -231,10 +246,10 @@ export default function DramaticRules() {
                 </View>
                 <Text style={styles.sectionTitle}>End of Round</Text>
                 <Text style={styles.description}>
-                  After 5 minutes, trading stops and the fair value is revealed. Your profit/loss is calculated from all your trades.
+                  After 5 minutes, trading stops and the real share price is revealed. Your profit/loss is calculated from all your trades.
                 </Text>
                 <View style={styles.exampleContainer}>
-                  <Text style={styles.exampleText}>📈 Example: If the fair value is 15, buying 2 units at $13 (+$4) and selling 1 at $17 (+$2) gives you <Text style={styles.exampleHighlight}>$6 total profit</Text>.</Text>
+                  <Text style={styles.exampleText}>📈 Example: If the share price is 15, buying 2 shares at $13 (+$4) and selling 1 share at $17 (+$2) gives you <Text style={styles.exampleHighlight}>$6 total profit.</Text>.</Text>
                   <Text style={styles.exampleText}>⚠️ Contract penalties are applied if required.</Text>
                 </View>
               </View>
@@ -249,6 +264,9 @@ export default function DramaticRules() {
                 <Text style={styles.sectionTitle}>Winning the Game</Text>
                 <Text style={styles.description}>
                   Profits and losses accumulate across multiple rounds. The player with the highest total profit wins!
+                </Text>
+                <Text style={styles.description}>
+                  Please note that good performance doesn't necessarily mean a promotion in our company, but remember that we value you as an employee.
                 </Text>
                 <View style={styles.exampleContainer}>
                   <Text style={styles.exampleText}>💡 Success requires <Text style={styles.exampleHighlight}>smart trading</Text>, <Text style={styles.exampleHighlight}>effective use of information</Text>, and <Text style={styles.exampleHighlight}>careful management of mandatory orders</Text>.</Text>
