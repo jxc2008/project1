@@ -371,6 +371,7 @@ export default function GamePage() {
   };
 
   const handleBid = (number) => {
+    const socket = getSocket();
     if (isNaN(number) || number < 1 || number > 20) {
       alert('Invalid bid. It must be between 1 and 20.');
       return;
@@ -383,10 +384,10 @@ export default function GamePage() {
       alert('Your bid must be higher than the current bid.');
       return;
     }
-    const socket = getSocket();
-    socket.emit('make_market', { action: 'bid', number });
+    socket.emit("make_market", { roomId, playerName: username, action: "bid", number });
     setGameLog((prevLog) => [...prevLog, `You placed a bid for $${number}.`]);
     setCurrentBid(number);
+    setBidAmount("");
   };
 
   const handleAsk = (number) => {
@@ -403,28 +404,33 @@ export default function GamePage() {
       return;
     }
     const socket = getSocket();
-    socket.emit('make_market', { action: 'ask', number });
+    socket.emit("make_market", { roomId, playerName: username, action: "ask", number});
     setGameLog((prevLog) => [...prevLog, `You placed an ask for $${number}.`]);
     setCurrentAsk(number);
+    setAskAmount("");
   };
 
   const handleHitBid = () => {
-    if (currentBid > 0) {
-      const socket = getSocket();
-      socket.emit('take_market', { action: 'hit' });
-      setGameLog((prevLog) => [...prevLog, 'You hit the bid!']);
-      setCurrentBid(0);
+    const socket = getSocket();
+    if (currentBid > 0) { // Allow hitting the bid if bid > 0
+      socket.emit("take_market", {
+        roomId,
+        playerName: username,
+        action: "hit",
+      });
     } else {
       alert('No valid bid to hit.');
     }
   };
 
   const handleLiftAsk = () => {
-    if (currentAsk < 21) {
-      const socket = getSocket();
-      socket.emit('take_market', { action: 'lift' });
-      setGameLog((prevLog) => [...prevLog, 'You lifted the ask!']);
-      setCurrentAsk(21);
+    const socket = getSocket();
+    if (currentAsk < 21) { // Allow lifting the ask if ask < 21
+      socket.emit("take_market", {
+        roomId,
+        playerName: username,
+        action: "lift",
+      });
     } else {
       alert('No valid ask to lift.');
     }
