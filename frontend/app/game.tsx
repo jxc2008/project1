@@ -567,22 +567,26 @@ export default function GamePage() {
   // update! Modified useEffect to call endRound when timer reaches 0
   useEffect(() => {
        const socket = getSocket();
+       console.log("use effect loaded")
  
        // Handle beforeunload for refresh/navigation
        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-         event.preventDefault();
-         socket.emit('leave_game', { username, roomId });
-         navigator.sendBeacon(
-           "https://hi-lo-backend.onrender.com/disconnect",
-           JSON.stringify({ roomId, username })
-         );
+          console.log("beforeunload event triggered")
+          event.preventDefault();
+          socket.emit('leave_game', { username, roomId });
+          navigator.sendBeacon(
+            "https://hi-lo-backend.onrender.com/disconnect",
+            JSON.stringify({ roomId, username })
+          );
        };
  
        // Add both event listeners
        window.addEventListener('beforeunload', handleBeforeUnload);
+       console.log("event listener added")
  
        // Cleanup function
        return () => {
+         console.log("cleaning up useffect function")
          window.removeEventListener('beforeunload', handleBeforeUnload);
          socket.off('player_left');
          socket.off('update_host');
