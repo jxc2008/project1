@@ -9,6 +9,7 @@ import {
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
 } from 'react-native';
 import { Link } from 'expo-router';
 
@@ -123,16 +124,24 @@ export default function DramaticRules() {
               <Text style={styles.date}>{new Date().toLocaleDateString()}</Text>
               <Text style={styles.greeting}>Dear Candidate,</Text>
               <Text style={styles.letterBody}>
-                Congratulations! After successfully navigating an especially rigorous recruiting process, we are delighted to extend you a formal offer to join Hi-Lo, LLC as a Quantitative Trader. As one of the most innovative and enigmatic quantitative trading firms of the modern era, we invite you to step into our world and begin an extraordinary journey.
+                {Platform.OS === 'web'
+                  ? 'Congratulations! After successfully navigating an especially rigorous recruiting process, we are delighted to extend you a formal offer to join Hi-Lo, LLC as a Quantitative Trader. As one of the most innovative and enigmatic quantitative trading firms of the modern era, we invite you to step into our world and begin an extraordinary journey.'
+                  : 'Congratulations! After successfully navigating an especially rigorous recruiting process, we are delighted to extend you a formal offer to join Hi-Lo, LLC as a Quantitative Trader.'}
               </Text>
+              {Platform.OS === 'web' && (
+                <Text style={styles.letterBody}>
+                  At Hi-Lo, our company culture thrives on competition. As such, your role will involve competing against your fellow coworkers to generate the highest profits within our proprietary stock market simulation. Your journey begins immediately, and your first task is to master the rules of our dynamic trading game.
+                </Text>
+              )}
+              {Platform.OS === 'web' && (
+                <Text style={styles.letterBody}>
+                  Remember, discretion is paramount—guard your trading strategies closely, as the path to success lies in secrecy and strategy.
+                </Text>
+              )}
               <Text style={styles.letterBody}>
-                At Hi-Lo, our company culture thrives on competition. As such, your role will involve competing against your fellow coworkers to generate the highest profits within our proprietary stock market simulation. Your journey begins immediately, and your first task is to master the rules of our dynamic trading game.
-              </Text>
-              <Text style={styles.letterBody}>
-                Remember, discretion is paramount—guard your trading strategies closely, as the path to success lies in secrecy and strategy.
-              </Text>
-              <Text style={styles.letterBody}>
-                Please find the game rules outlined below. Should you have any questions, our team is here to support you. Until then, may the markets ever move in your favor.
+                {Platform.OS === 'web'
+                  ? 'Please find the game rules outlined below. Should you have any questions, our team is here to support you. Until then, may the markets ever move in your favor.'
+                  : 'Please be advised that your salary will depend on your performance. You will compete against your fellow coworkers to make the most profit. Find the game rules outlined below. '}
               </Text>
               <View style={styles.letterDecoration} />
               <Text style={styles.closing}>Sincerely,</Text>
