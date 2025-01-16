@@ -69,32 +69,47 @@ export default function WaitingRoom({ currentPlayers = [], minPlayers = 4 }: Wai
   }, []);
 
   useEffect(() => {
-      const socket = getSocket();
-
-      // Handle beforeunload for refresh/navigation
-      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-        event.preventDefault();
-        socket.emit('leave_game', { username, roomId });
-        navigator.sendBeacon(
-          "https://hi-lo-backend.onrender.com/disconnect",
-          JSON.stringify({ roomId, username })
-        );
-      };
-
-      // Add both event listeners
-      window.addEventListener('beforeunload', handleBeforeUnload);
-
-      // Cleanup function
-      return () => {
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-        socket.off('player_left');
-        socket.off('update_host');
-        socket.off('start_round');
-        socket.off('end_round');
-        socket.off('game_ended');
-      };
-    }, [roomId, username]);
-
+    const socket = getSocket();
+  
+    // Shared cleanup logic
+    const handleExit = () => {
+      socket.emit('leave_game', { username, roomId });
+      navigator.sendBeacon(
+        "https://hi-lo-backend.onrender.com/disconnect",
+        JSON.stringify({ roomId, username })
+      );
+    };
+  
+    // Handle tab close or refresh
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      handleExit();
+    };
+  
+    // Handle back/forward navigation
+    const handlePopState = () => {
+      handleExit();
+    };
+  
+    // Add event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+  
+    // Cleanup function
+    return () => {
+      handleExit();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+  
+      // Clean up socket listeners
+      socket.off('player_left');
+      socket.off('update_host');
+      socket.off('start_round');
+      socket.off('end_round');
+      socket.off('game_ended');
+    };
+  }, [roomId, username]);
+  
   useEffect(() => {
     const interval = setInterval(() => {
       setDots(prev => (prev.length < 3 ? prev + '.' : '.'));
