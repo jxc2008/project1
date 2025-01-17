@@ -14,6 +14,8 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
   const [isPrivate, setIsPrivate] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [usernameLengthError, setUsernameLengthError] = useState('');
+  const [roomNameError, setRoomNameError] = useState('');
 
   const router = useRouter();
 
@@ -46,8 +48,12 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
         }
       });
     } catch (error) {
-      console.error('Failed to create room:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to create room');
+      const errorMessage = error.response?.data?.message || 'Failed to join room';
+      if (errorMessage === "Username must be at least 3 characters long") {
+        setUsernameLengthError('Username must be at least 3 characters long');
+      } else if (errorMessage === "Room with this name already exists") {
+        setRoomNameError('Room with this name already exists');
+      }
     }
 
   };
@@ -68,6 +74,9 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
               placeholder="Enter room name"
               placeholderTextColor="#9CA3AF"
             />
+            {roomNameError && (
+              <Text style={crmStyles.errorText}>{roomNameError}</Text>
+            )}
           </View>
 
           {/* Username */}
@@ -80,6 +89,9 @@ export default function CreateRoomModal({ onClose }: CreateRoomModalProps) {
               placeholder="Enter your username"
               placeholderTextColor="#9CA3AF"
             />
+            {usernameLengthError && (
+              <Text style={crmStyles.errorText}>{usernameLengthError}</Text>
+            )}
           </View>
 
           {/* Private Room Toggle */}

@@ -176,6 +176,11 @@ export const crmStyles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  errorText: {
+    color: '#F87171',
+    fontSize: 12,
+    marginTop: 4,
+  },
 });
 
 export const joinModalStyles = StyleSheet.create({

@@ -152,6 +152,9 @@ def create_room():
 
     if rooms_collection.find_one({"name": name}):
         return jsonify({"message": "Room with this name already exists"}), 400
+
+    if len(username) < 3:
+        return jsonify({"message": "Username must be at least 3 characters long"}), 400
     
     room_code = generate_room_code()
     while rooms_collection.find_one({"room_code": room_code}):
@@ -246,6 +249,9 @@ def join_room():
 
         if room.get('isPrivate') and room.get('password') != password:
             return jsonify({"message": "Invalid password"}), 401
+        
+        if len(username) < 3:
+            return jsonify({"message": "Username must be at least 3 characters long"}), 400
         
         room["game"] = deserialize_game(room.get("game", {}))
         num_players = len(room["game"].players)

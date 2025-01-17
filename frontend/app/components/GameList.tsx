@@ -19,6 +19,7 @@ export default function GameList() {
   const [roomIsFull, setRoomIsFull] = useState('');
   const [handleTaken, setHandleTaken] = useState('');
   const [countdown, setCountdown] = useState(5); // Countdown state
+  const [usernameLengthError, setUsernameLengthError] = useState('');
 
   
   const router = useRouter();
@@ -71,6 +72,7 @@ export default function GameList() {
     setHandleNotSet('');
     setRoomIsFull('');
     setHandleTaken('');
+    setUsernameLengthError("");
     setIsPrivate(room.isPrivate);
   };
 
@@ -80,6 +82,7 @@ export default function GameList() {
       setPasswordError('');
       setRoomIsFull('');
       setHandleTaken('');
+      setUsernameLengthError("");
       return;
     }
 
@@ -118,13 +121,22 @@ export default function GameList() {
         setHandleNotSet('');
         setRoomIsFull('');
         setHandleTaken('');
+        setUsernameLengthError("");
       } else if (errorMessage === 'Room is full') {
         setRoomIsFull('Room is full');
         setHandleNotSet('');
         setPasswordError('');
         setHandleTaken('');
+        setUsernameLengthError("");
       } else if (errorMessage === 'Username taken') {
         setHandleTaken('Username already taken in this room');
+        setHandleNotSet('');
+        setPasswordError('');
+        setRoomIsFull('');
+        setUsernameLengthError("");
+      } else if (errorMessage === "Username must be at least 3 characters long") {
+        setUsernameLengthError("Username must be at least 3 characters long");
+        setHandleTaken('');
         setHandleNotSet('');
         setPasswordError('');
         setRoomIsFull('');
@@ -200,6 +212,9 @@ export default function GameList() {
                 )}
                 {handleTaken && (
                   <Text style={gameListStyles.errorText}>{handleTaken}</Text>
+                )}
+                {usernameLengthError && (
+                  <Text style={gameListStyles.errorText}>{usernameLengthError}</Text>
                 )}
               </>
             )}

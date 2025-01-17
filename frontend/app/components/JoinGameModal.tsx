@@ -19,6 +19,7 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
   const [handleNotSet, setHandleNotSet] = useState('');
   const [roomIsFull, setRoomIsFull] = useState('');
   const [handleTaken, setHandleTaken] = useState('');
+  const [usernameLengthError, setUsernameLengthError] = useState('');
 
   const router = useRouter();
 
@@ -29,6 +30,7 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
       setPasswordError('');
       setRoomIsFull('');
       setHandleTaken('');
+      setUsernameLengthError("");
       return;
     }
 
@@ -38,6 +40,7 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
       setPasswordError('');
       setRoomIsFull('');
       setHandleTaken('');
+      setUsernameLengthError("");
       return;
     }
 
@@ -70,20 +73,31 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
         setHandleNotSet('');
         setRoomIsFull('');
         setHandleTaken('');
+        setUsernameLengthError("");
       } else if (errorMessage === 'Room not found') {
         setRoomNotFound('Room not found');
         setPasswordError('');
         setHandleNotSet('');
         setRoomIsFull('');
         setHandleTaken('');
+        setUsernameLengthError("");
       } else if (errorMessage === 'Room is full') {
         setRoomIsFull('Room is full');
         setRoomNotFound('');
         setHandleNotSet('');
         setPasswordError('');
         setHandleTaken('');
+        setUsernameLengthError("");
       } else if (errorMessage === 'Username taken') {
         setHandleTaken('Username already taken in this room');
+        setRoomIsFull('');
+        setRoomNotFound('');
+        setHandleNotSet('');
+        setPasswordError('');
+        setUsernameLengthError("");
+      } else if (errorMessage === "Username must be at least 3 characters long") {
+        setUsernameLengthError("Username must be at least 3 characters long");
+        setHandleTaken('');
         setRoomIsFull('');
         setRoomNotFound('');
         setHandleNotSet('');
@@ -135,6 +149,9 @@ export default function JoinGameModal({ onClose }: JoinGameModalProps) {
               )}
               {handleTaken && (
                 <Text style={joinModalStyles.errorText}>{handleTaken}</Text>
+              )}
+              {usernameLengthError && (
+                <Text style={joinModalStyles.errorText}>{usernameLengthError}</Text>
               )}
             </View>
           )}
