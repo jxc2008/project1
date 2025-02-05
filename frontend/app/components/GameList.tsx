@@ -146,8 +146,8 @@ export default function GameList() {
           {item.players.length}/10 players {item.isPrivate && '🔒'}
         </Text>
       </View>
-      <View style={gameListStyles.buttonGroup}>
-        {/* Spectate button to the left */}
+      <View style={[gameListStyles.buttonGroup, { flexDirection: 'row', alignItems: 'center' }]}>
+        {/* Spectate button to the LEFT */}
         <TouchableOpacity
           onPress={() => {
             // If the room object has gameData, pass it; otherwise, assume the game hasn't started.
@@ -165,7 +165,7 @@ export default function GameList() {
         >
           <Ionicons name="eye-outline" size={20} color="#fff" />
         </TouchableOpacity>
-        {/* Join button to the right */}
+        {/* Join button to the RIGHT */}
         <TouchableOpacity onPress={() => openJoinModal(item)} style={gameListStyles.joinButton}>
           <Text style={gameListStyles.joinButtonText}>Join</Text>
         </TouchableOpacity>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, Modal, Animated, ScrollView } from 'react-native';
 import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { getSocket } from '../utils/socket';
 
 export default function Spectator() {
   const navigation = useNavigation();
@@ -12,6 +13,7 @@ export default function Spectator() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Process any gameData passed initially
   useEffect(() => {
     if (gameData) {
       try {
@@ -23,7 +25,7 @@ export default function Spectator() {
         } else {
           setPlayers([]);
         }
-        // Determine if game has started based on round_active flag (as in game.tsx)
+        // Determine if game has started based on round_active flag
         setGameStarted(finalData.round_active);
         // Set game log if available (assumes finalData.game_log is an array)
         if (finalData.game_log && Array.isArray(finalData.game_log)) {
@@ -39,6 +41,40 @@ export default function Spectator() {
       setGameStarted(false);
     }
   }, [gameData]);
+
+  // Subscribe to socket events for live updates
+  useEffect(() => {
+    const socket = getSocket();
+    // Listen for game start / round start event
+    socket.on('start_round', (data: any) => {
+      try {
+        const parsedData = JSON.parse(data.gameData);
+        // Update players if available
+        if (parsedData.players && parsedData.players.length > 0) {
+          setPlayers(parsedData.players.map((p: any) => ({ name: p.username })));
+        }
+        // Update game log if provided
+        if (parsedData.game_log && Array.isArray(parsedData.game_log)) {
+          setGameLog(parsedData.game_log);
+        }
+        setGameStarted(parsedData.round_active);
+      } catch (err) {
+        console.error("Error processing start_round event:", err);
+      }
+    });
+
+    // Optionally, listen for other events that update the game log:
+    socket.on('game_log_update', (data: any) => {
+      if (data.game_log && Array.isArray(data.game_log)) {
+        setGameLog(data.game_log);
+      }
+    });
+
+    return () => {
+      socket.off('start_round');
+      socket.off('game_log_update');
+    };
+  }, []);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
