@@ -20,7 +20,7 @@ export default function GameList() {
   const [handleTaken, setHandleTaken] = useState('');
   const [countdown, setCountdown] = useState(5);
   const [usernameLengthError, setUsernameLengthError] = useState('');
-  
+
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function GameList() {
   // Auto-refresh interval setup
   useEffect(() => {
     const interval = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1) {
           fetchRooms();
           return 5; // Reset countdown after refresh
@@ -66,7 +66,7 @@ export default function GameList() {
     setHandleNotSet('');
     setRoomIsFull('');
     setHandleTaken('');
-    setUsernameLengthError("");
+    setUsernameLengthError('');
     setIsPrivate(room.isPrivate);
   };
 
@@ -76,7 +76,7 @@ export default function GameList() {
       setPasswordError('');
       setRoomIsFull('');
       setHandleTaken('');
-      setUsernameLengthError("");
+      setUsernameLengthError('');
       return;
     }
 
@@ -104,7 +104,7 @@ export default function GameList() {
           player_list: response.data.player_list,
           host_username: response.data.host_username,
           room_code: response.data.room_code,
-        }
+        },
       });
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to join room';
@@ -113,21 +113,21 @@ export default function GameList() {
         setHandleNotSet('');
         setRoomIsFull('');
         setHandleTaken('');
-        setUsernameLengthError("");
+        setUsernameLengthError('');
       } else if (errorMessage === 'Room is full') {
         setRoomIsFull('Room is full');
         setHandleNotSet('');
         setPasswordError('');
         setHandleTaken('');
-        setUsernameLengthError("");
+        setUsernameLengthError('');
       } else if (errorMessage === 'Username taken') {
         setHandleTaken('Username already taken in this room');
         setHandleNotSet('');
         setPasswordError('');
         setRoomIsFull('');
-        setUsernameLengthError("");
-      } else if (errorMessage === "Username must be at least 3 characters long") {
-        setUsernameLengthError("Username must be at least 3 characters long");
+        setUsernameLengthError('');
+      } else if (errorMessage === 'Username must be at least 3 characters long') {
+        setUsernameLengthError('Username must be at least 3 characters long');
         setHandleTaken('');
         setHandleNotSet('');
         setPasswordError('');
@@ -147,7 +147,7 @@ export default function GameList() {
         </Text>
       </View>
       <View style={[gameListStyles.buttonGroup, { flexDirection: 'row', alignItems: 'center' }]}>
-        {/* Spectate button to the LEFT */}
+        {/* Spectate button to the LEFT, with spacing to the right */}
         <TouchableOpacity
           onPress={() => {
             // If the room object has gameData, pass it; otherwise, assume the game hasn't started.
@@ -157,11 +157,11 @@ export default function GameList() {
               params: {
                 roomId: item._id,
                 started: started,
-                ...(item.gameData ? { gameData: item.gameData } : {})
-              }
+                ...(item.gameData ? { gameData: item.gameData } : {}),
+              },
             });
           }}
-          style={gameListStyles.spectateButton}
+          style={[gameListStyles.spectateButton, { marginRight: 10 }]}
         >
           <Ionicons name="eye-outline" size={20} color="#fff" />
         </TouchableOpacity>
@@ -177,7 +177,14 @@ export default function GameList() {
     <View style={gameListStyles.container}>
       <Text style={gameListStyles.title}>Ongoing Games</Text>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 10 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginVertical: 10,
+        }}
+      >
         <TouchableOpacity
           onPress={() => {
             fetchRooms();
@@ -219,15 +226,9 @@ export default function GameList() {
                 value={username}
                 onChangeText={setUsername}
               />
-              {handleNotSet && (
-                <Text style={gameListStyles.errorText}>{handleNotSet}</Text>
-              )}
-              {handleTaken && (
-                <Text style={gameListStyles.errorText}>{handleTaken}</Text>
-              )}
-              {usernameLengthError && (
-                <Text style={gameListStyles.errorText}>{usernameLengthError}</Text>
-              )}
+              {handleNotSet && <Text style={gameListStyles.errorText}>{handleNotSet}</Text>}
+              {handleTaken && <Text style={gameListStyles.errorText}>{handleTaken}</Text>}
+              {usernameLengthError && <Text style={gameListStyles.errorText}>{usernameLengthError}</Text>}
             </>
             {isPrivate && (
               <>
@@ -239,25 +240,15 @@ export default function GameList() {
                   onChangeText={setPassword}
                   secureTextEntry
                 />
-                {passwordError && (
-                  <Text style={gameListStyles.errorText}>{passwordError}</Text>
-                )}
+                {passwordError && <Text style={gameListStyles.errorText}>{passwordError}</Text>}
               </>
             )}
             <View style={gameListStyles.buttonContainer}>
-              {roomIsFull && (
-                <Text style={gameListStyles.errorText}>{roomIsFull}</Text>
-              )}
-              <TouchableOpacity
-                onPress={() => setIsJoinModalVisible(false)}
-                style={gameListStyles.cancelButton}
-              >
+              {roomIsFull && <Text style={gameListStyles.errorText}>{roomIsFull}</Text>}
+              <TouchableOpacity onPress={() => setIsJoinModalVisible(false)} style={gameListStyles.cancelButton}>
                 <Text style={gameListStyles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={joinRoom}
-                style={gameListStyles.submitButton}
-              >
+              <TouchableOpacity onPress={joinRoom} style={gameListStyles.submitButton}>
                 <Text style={gameListStyles.buttonText}>Join</Text>
               </TouchableOpacity>
             </View>
