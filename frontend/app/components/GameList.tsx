@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Alert} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { gameListStyles } from '../../styles/global';
 import axios from 'axios';
-
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function GameList() {
   const [rooms, setRooms] = useState([]);
@@ -13,14 +13,13 @@ export default function GameList() {
   const [password, setPassword] = useState('');
   const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
   const [roomCodes, setRoomCodes] = useState({});
-  const [isPrivate, setIsPrivate] = useState(false); // Track if the selected room is private
-  const [passwordError, setPasswordError] = useState(''); // Track password error message
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
   const [handleNotSet, setHandleNotSet] = useState('');
   const [roomIsFull, setRoomIsFull] = useState('');
   const [handleTaken, setHandleTaken] = useState('');
-  const [countdown, setCountdown] = useState(5); // Countdown state
+  const [countdown, setCountdown] = useState(5);
   const [usernameLengthError, setUsernameLengthError] = useState('');
-
   
   const router = useRouter();
 
@@ -38,11 +37,9 @@ export default function GameList() {
         }
         return prev - 1;
       });
-    }, 1000); // Update every second
-
-    return () => clearInterval(interval); // Cleanup on unmount
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
-
 
   const fetchRooms = async () => {
     setIsLoading(true);
@@ -55,9 +52,6 @@ export default function GameList() {
         roomCodeMap[room._id] = room.room_code;
       });
       setRoomCodes(roomCodeMap);
-
-
-
     } catch (error) {
       Alert.alert('Error', error);
     } finally {
@@ -112,8 +106,6 @@ export default function GameList() {
           room_code: response.data.room_code,
         }
       });
-
-
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to join room';
       if (errorMessage === 'Invalid password') {
@@ -150,11 +142,33 @@ export default function GameList() {
     <View style={gameListStyles.gameItem}>
       <View style={gameListStyles.gameDetails}>
         <Text style={gameListStyles.gameName}>{item.name}</Text>
-        <Text style={gameListStyles.gameInfo}>{item.players.length}/10 players {item.isPrivate && '🔒'} </Text>
+        <Text style={gameListStyles.gameInfo}>
+          {item.players.length}/10 players {item.isPrivate && '🔒'}
+        </Text>
       </View>
-      <TouchableOpacity onPress={() => openJoinModal(item)} style={gameListStyles.joinButton}>
-        <Text style={gameListStyles.joinButtonText}>Join</Text>
-      </TouchableOpacity>
+      <View style={gameListStyles.buttonGroup}>
+        <TouchableOpacity onPress={() => openJoinModal(item)} style={gameListStyles.joinButton}>
+          <Text style={gameListStyles.joinButtonText}>Join</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            // If the room object has gameData, pass it; otherwise, assume the game hasn't started.
+            const started = item.gameData ? 'true' : 'false';
+            router.push({
+              pathname: '/spectator',
+              params: {
+                roomId: item._id,
+                started: started,
+                ...(item.gameData ? { gameData: item.gameData } : {})
+              }
+            });
+          }}
+          style={gameListStyles.spectateButton}
+        >
+          <Ionicons name="eye-outline" size={20} color="#fff" />
+          <Text style={gameListStyles.spectateButtonText}>Spectate</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -168,7 +182,7 @@ export default function GameList() {
             fetchRooms();
             setCountdown(5); // Reset countdown on manual refresh
           }}
-          style={gameListStyles.refreshButton} // Define style as needed
+          style={gameListStyles.refreshButton}
         >
           <Text style={gameListStyles.refreshButtonText}>Refresh</Text>
         </TouchableOpacity>
@@ -196,30 +210,24 @@ export default function GameList() {
         <View style={gameListStyles.overlay}>
           <View style={gameListStyles.modalContainer}>
             <Text style={gameListStyles.modalTitle}>Join Room</Text>
-
-            {/* Username Field */}
-            {(
-              <>
-                <TextInput
-                  style={gameListStyles.input}
-                  placeholder="Enter your username"
-                  placeholderTextColor="#9CA3AF"
-                  value={username}
-                  onChangeText={setUsername}
-                />
-                {handleNotSet && (
-                  <Text style={gameListStyles.errorText}>{handleNotSet}</Text>
-                )}
-                {handleTaken && (
-                  <Text style={gameListStyles.errorText}>{handleTaken}</Text>
-                )}
-                {usernameLengthError && (
-                  <Text style={gameListStyles.errorText}>{usernameLengthError}</Text>
-                )}
-              </>
-            )}
-
-            {/* Password Field (only if private room) */}
+            <>
+              <TextInput
+                style={gameListStyles.input}
+                placeholder="Enter your username"
+                placeholderTextColor="#9CA3AF"
+                value={username}
+                onChangeText={setUsername}
+              />
+              {handleNotSet && (
+                <Text style={gameListStyles.errorText}>{handleNotSet}</Text>
+              )}
+              {handleTaken && (
+                <Text style={gameListStyles.errorText}>{handleTaken}</Text>
+              )}
+              {usernameLengthError && (
+                <Text style={gameListStyles.errorText}>{usernameLengthError}</Text>
+              )}
+            </>
             {isPrivate && (
               <>
                 <TextInput
@@ -235,12 +243,9 @@ export default function GameList() {
                 )}
               </>
             )}
-
-
-            {/* Buttons */}
             <View style={gameListStyles.buttonContainer}>
               {roomIsFull && (
-                  <Text style={gameListStyles.errorText}>{roomIsFull}</Text>
+                <Text style={gameListStyles.errorText}>{roomIsFull}</Text>
               )}
               <TouchableOpacity
                 onPress={() => setIsJoinModalVisible(false)}
@@ -248,17 +253,13 @@ export default function GameList() {
               >
                 <Text style={gameListStyles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={joinRoom}
-                style={gameListStyles.submitButton}
-              >
+              <TouchableOpacity onPress={joinRoom} style={gameListStyles.submitButton}>
                 <Text style={gameListStyles.buttonText}>Join</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }

@@ -1,48 +1,44 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Animated,
-  ScrollView,
-} from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, Modal, Animated, ScrollView } from 'react-native';
 import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Spectator() {
   const navigation = useNavigation();
-  const { roomId, started } = useLocalSearchParams(); // Expect roomId and "started" flag in the URL
-  const [players, setPlayers] = useState<Array<{ name: string }>>([]);
-  const [gameLog, setGameLog] = useState<string[]>([]);
+  const { roomId, gameData } = useLocalSearchParams(); // Expects roomId and (optionally) gameData passed from GameList
+  const [players, setPlayers] = useState([]);
+  const [gameLog, setGameLog] = useState([]);
+  const [gameStarted, setGameStarted] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // For demonstration, we simulate game data based on the "started" query parameter.
   useEffect(() => {
-    if (started === "true") {
-      setPlayers([
-        { name: "Alice" },
-        { name: "Bob" },
-        { name: "Charlie" },
-        { name: "Diana" },
-      ]);
-      setGameLog([
-        "Game started.",
-        "Alice placed a bid of $5.",
-        "Bob placed an ask of $10.",
-        "Charlie hit the bid.",
-        "Diana lifted the ask.",
-      ]);
+    if (gameData) {
+      try {
+        const parsedGameData = JSON.parse(Array.isArray(gameData) ? gameData[0] : gameData);
+        const finalData = typeof parsedGameData === 'string' ? JSON.parse(parsedGameData) : parsedGameData;
+        // Set players from finalData.players if available
+        if (finalData.players && finalData.players.length > 0) {
+          setPlayers(finalData.players.map((p) => ({ name: p.username })));
+        } else {
+          setPlayers([]);
+        }
+        // Determine if game has started based on round_active flag (as in game.tsx)
+        setGameStarted(finalData.round_active);
+        // Set game log if available (assumes finalData.game_log is an array)
+        if (finalData.game_log && Array.isArray(finalData.game_log)) {
+          setGameLog(finalData.game_log);
+        } else {
+          setGameLog([]);
+        }
+      } catch (err) {
+        console.error("Error parsing gameData:", err);
+        setGameStarted(false);
+      }
     } else {
-      setPlayers([]);
-      setGameLog([]);
+      setGameStarted(false);
     }
-  }, [started]);
-
-  const gameStarted = players.length > 0;
+  }, [gameData]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -68,7 +64,7 @@ export default function Spectator() {
 
       {/* Main Content with Fade Animation */}
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        { !gameStarted ? (
+        {!gameStarted ? (
           <View style={styles.centeredMessage}>
             <Text style={styles.messageText}>Game has not started yet.</Text>
           </View>
@@ -82,9 +78,13 @@ export default function Spectator() {
             </View>
             <View style={styles.logSection}>
               <Text style={styles.sectionTitle}>Game Log</Text>
-              {gameLog.map((log, index) => (
-                <Text key={index} style={styles.logText}>{log}</Text>
-              ))}
+              {gameLog.length > 0 ? (
+                gameLog.map((log, index) => (
+                  <Text key={index} style={styles.logText}>{log}</Text>
+                ))
+              ) : (
+                <Text style={styles.logText}>No game events yet.</Text>
+              )}
             </View>
           </ScrollView>
         )}
