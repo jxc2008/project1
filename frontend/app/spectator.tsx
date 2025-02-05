@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  ScrollView,
+} from 'react-native';
 import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Spectator() {
   const navigation = useNavigation();
-  const { roomId, started } = useLocalSearchParams(); // Expect roomId and a "started" flag in the URL
+  const { roomId, started } = useLocalSearchParams(); // Expect roomId and "started" flag in the URL
   const [players, setPlayers] = useState<Array<{ name: string }>>([]);
+  const [gameLog, setGameLog] = useState<string[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // For demonstration: if the query parameter "started" equals "true", simulate a started game with dummy players.
+  // For demonstration, we simulate game data based on the "started" query parameter.
   useEffect(() => {
     if (started === "true") {
       setPlayers([
@@ -18,40 +29,66 @@ export default function Spectator() {
         { name: "Charlie" },
         { name: "Diana" },
       ]);
+      setGameLog([
+        "Game started.",
+        "Alice placed a bid of $5.",
+        "Bob placed an ask of $10.",
+        "Charlie hit the bid.",
+        "Diana lifted the ask.",
+      ]);
     } else {
       setPlayers([]);
+      setGameLog([]);
     }
   }, [started]);
 
   const gameStarted = players.length > 0;
 
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header with Return Home and View Leaderboard buttons */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.homeButton} onPress={() => navigation.navigate('index')}>
-          <Ionicons name="home-outline" size={24} color="#3b82f6" />
-          <Text style={styles.homeButtonText}>Home</Text>
+      <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+        <TouchableOpacity style={styles.returnButton} onPress={() => navigation.navigate('index')}>
+          <Ionicons name="arrow-back-outline" size={24} color="#3b82f6" />
+          <Text style={styles.returnText}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.leaderboardButton} onPress={() => setShowLeaderboard(true)}>
           <Ionicons name="trophy-outline" size={24} color="#3b82f6" />
-          <Text style={styles.leaderboardButtonText}>Leaderboard</Text>
+          <Text style={styles.leaderboardText}>Leaderboard</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      {/* Main Content */}
-      <View style={styles.content}>
+      {/* Main Content with Fade Animation */}
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         { !gameStarted ? (
-          <Text style={styles.messageText}>Game has not started yet.</Text>
-        ) : (
-          <View style={styles.playersContainer}>
-            <Text style={styles.sectionTitle}>Players</Text>
-            {players.map((player, index) => (
-              <Text key={index} style={styles.playerName}>{player.name}</Text>
-            ))}
+          <View style={styles.centeredMessage}>
+            <Text style={styles.messageText}>Game has not started yet.</Text>
           </View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.gameContainer}>
+            <View style={styles.playersSection}>
+              <Text style={styles.sectionTitle}>Players</Text>
+              {players.map((player, index) => (
+                <Text key={index} style={styles.playerName}>{player.name}</Text>
+              ))}
+            </View>
+            <View style={styles.logSection}>
+              <Text style={styles.sectionTitle}>Game Log</Text>
+              {gameLog.map((log, index) => (
+                <Text key={index} style={styles.logText}>{log}</Text>
+              ))}
+            </View>
+          </ScrollView>
         )}
-      </View>
+      </Animated.View>
 
       {/* Leaderboard Modal */}
       <Modal
@@ -84,56 +121,68 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    padding: 15,
     borderBottomWidth: 1,
     borderColor: '#ccc',
     backgroundColor: '#fff',
   },
-  homeButton: {
+  returnButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  homeButtonText: {
+  returnText: {
     marginLeft: 5,
-    color: '#3b82f6',
     fontSize: 16,
+    color: '#3b82f6',
     fontWeight: 'bold',
   },
   leaderboardButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  leaderboardButtonText: {
+  leaderboardText: {
     marginLeft: 5,
-    color: '#3b82f6',
     fontSize: 16,
+    color: '#3b82f6',
     fontWeight: 'bold',
   },
   content: {
     flex: 1,
+    padding: 20,
+  },
+  centeredMessage: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   messageText: {
     fontSize: 20,
     color: '#333',
   },
-  playersContainer: {
-    width: '100%',
-    alignItems: 'center',
+  gameContainer: {
+    paddingBottom: 20,
+  },
+  playersSection: {
+    marginBottom: 30,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 10,
     color: '#333',
   },
   playerName: {
     fontSize: 18,
     color: '#333',
-    marginVertical: 5,
+    marginVertical: 4,
+  },
+  logSection: {
+    marginBottom: 20,
+  },
+  logText: {
+    fontSize: 16,
+    color: '#555',
+    marginVertical: 2,
   },
   modalOverlay: {
     flex: 1,

@@ -60,13 +60,22 @@ export default function Index() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setShowJoinModal(true)}
-          >
-            <Ionicons name="enter-outline" size={24} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Join with Code</Text>
-          </TouchableOpacity>
+          <View style={styles.joinSpectateContainer}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setShowJoinModal(true)}
+            >
+              <Ionicons name="enter-outline" size={24} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Join with Code</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.spectateButton}
+              // Here we pass dummy query parameters (roomId and started). Replace with dynamic values as needed.
+              onPress={() => navigation.navigate('spectator', { roomId: '123', started: 'true' } as any)}
+            >
+              <Ionicons name="eye-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             style={styles.button}
@@ -74,14 +83,6 @@ export default function Index() {
           >
             <Ionicons name="add-circle-outline" size={24} color="#fff" style={styles.buttonIcon} />
             <Text style={styles.buttonText}>Create Room</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('spectator' as never)}
-          >
-            <Ionicons name="eye-outline" size={24} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Spectate</Text>
           </TouchableOpacity>
         </View>
 
@@ -163,11 +164,15 @@ const styles = StyleSheet.create({
     shadowRadius: 30,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: 'column',
+    justifyContent: 'center',
     width: '100%',
     marginVertical: 20,
-    flexWrap: 'wrap'
+  },
+  joinSpectateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   button: {
     backgroundColor: '#3b82f6',
@@ -177,7 +182,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    margin: 5,
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -190,6 +194,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  spectateButton: {
+    marginLeft: 10,
+    backgroundColor: '#3b82f6',
+    padding: 8,
+    borderRadius: 8,
   },
   nav: {
     flexDirection: 'row',
