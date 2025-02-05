@@ -75,6 +75,14 @@ export default function Index() {
             <Ionicons name="add-circle-outline" size={24} color="#fff" style={styles.buttonIcon} />
             <Text style={styles.buttonText}>Create Room</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('spectator' as never)}
+          >
+            <Ionicons name="eye-outline" size={24} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Spectate</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.nav}>
@@ -159,15 +167,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     width: '100%',
     marginVertical: 20,
+    flexWrap: 'wrap'
   },
   button: {
     backgroundColor: '#3b82f6',
-    paddingVertical: Platform.OS === 'web' ? 12 : 10, // Smaller padding on mobile
+    paddingVertical: Platform.OS === 'web' ? 12 : 10,
     paddingHorizontal: Platform.OS === 'web' ? 20 : 10,
     borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    margin: 5,
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
