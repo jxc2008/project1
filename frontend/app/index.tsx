@@ -60,22 +60,13 @@ export default function Index() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <View style={styles.joinSpectateContainer}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => setShowJoinModal(true)}
-            >
-              <Ionicons name="enter-outline" size={24} color="#fff" style={styles.buttonIcon} />
-              <Text style={styles.buttonText}>Join with Code</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.spectateButton}
-              // Here we pass dummy query parameters (roomId and started). Replace with dynamic values as needed.
-              onPress={() => navigation.navigate('spectator', { roomId: '123', started: 'true' } as any)}
-            >
-              <Ionicons name="eye-outline" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => setShowJoinModal(true)}
+          >
+            <Ionicons name="enter-outline" size={24} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Join with Code</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.button}
@@ -164,15 +155,10 @@ const styles = StyleSheet.create({
     shadowRadius: 30,
   },
   buttonContainer: {
-    flexDirection: 'column',
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     width: '100%',
     marginVertical: 20,
-  },
-  joinSpectateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
   },
   button: {
     backgroundColor: '#3b82f6',
@@ -194,12 +180,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  spectateButton: {
-    marginLeft: 10,
-    backgroundColor: '#3b82f6',
-    padding: 8,
-    borderRadius: 8,
   },
   nav: {
     flexDirection: 'row',

@@ -147,9 +147,7 @@ export default function GameList() {
         </Text>
       </View>
       <View style={gameListStyles.buttonGroup}>
-        <TouchableOpacity onPress={() => openJoinModal(item)} style={gameListStyles.joinButton}>
-          <Text style={gameListStyles.joinButtonText}>Join</Text>
-        </TouchableOpacity>
+        {/* Spectate button to the left */}
         <TouchableOpacity
           onPress={() => {
             // If the room object has gameData, pass it; otherwise, assume the game hasn't started.
@@ -166,7 +164,10 @@ export default function GameList() {
           style={gameListStyles.spectateButton}
         >
           <Ionicons name="eye-outline" size={20} color="#fff" />
-          <Text style={gameListStyles.spectateButtonText}>Spectate</Text>
+        </TouchableOpacity>
+        {/* Join button to the right */}
+        <TouchableOpacity onPress={() => openJoinModal(item)} style={gameListStyles.joinButton}>
+          <Text style={gameListStyles.joinButtonText}>Join</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -253,7 +254,10 @@ export default function GameList() {
               >
                 <Text style={gameListStyles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={joinRoom} style={gameListStyles.submitButton}>
+              <TouchableOpacity
+                onPress={joinRoom}
+                style={gameListStyles.submitButton}
+              >
                 <Text style={gameListStyles.buttonText}>Join</Text>
               </TouchableOpacity>
             </View>

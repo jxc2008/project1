@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function Spectator() {
   const navigation = useNavigation();
-  const { roomId, gameData } = useLocalSearchParams(); // Expects roomId and (optionally) gameData passed from GameList
+  const { roomId, gameData } = useLocalSearchParams(); // Expects roomId and (optionally) gameData from GameList
   const [players, setPlayers] = useState([]);
   const [gameLog, setGameLog] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
